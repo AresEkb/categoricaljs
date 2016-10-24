@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script type="text/javascript" src="https://d3js.org/d3.v4.min.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../src/Helpers.js"></script>
+    <script type="text/javascript" src="../src/Category.js"></script>
+    <script type="text/javascript" src="../src/Set.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../src/Graph.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../src/ViewHelpers.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../src/GraphView.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../src/LGraph.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../src/Diagram.js"></script>
+    <script type="text/javascript" src="../src/SetCategoryView.js"></script>
+<style type="text/css">
+.graph {
+  width: 450px;
+  height: 450px;
+  //float: left;
+  border: 1px solid gray;
+}
+.node {
+  cursor: move;
+}
+.node-circle {
+//  stroke: #ccc;
+//  stroke-width: 1px;
+}
+.node-label {
+  text-anchor: middle;
+  alignment-baseline: middle;
+  fill: white;
+  text-shadow: 0px 0px 0.2em black;
+//  stroke: white;
+//  stroke-width: 1px;
+//  text-shadow: 0px 1px black, 1px 0px black, 0px -1px black, -1px 0px black;
+}
+.node-label tspan {
+  font-size: smaller;
+  alignment-baseline: baseline;
+}
+.edge-path {
+  stroke: #000;
+  stroke-width: 3px;
+  fill: none;
+  opacity: 0.5;
+}
+.edge-label {
+  text-anchor: middle;
+  alignment-baseline: middle;
+  text-shadow: 0px 2px white, 2px 0px white, 0px -2px white, -2px 0px white;
+}
+.edge-label tspan {
+  font-size: smaller;
+  alignment-baseline: baseline;
+}
+</style>
+    <title></title>
+<script type="text/javascript">
+
+window.onload = function () {
+
+var nodeLabels = new Set(['A','B','C','D','E','F']),
+    edgeLabels = new Set(['f','g','h']);
+
+function personNode(model, node) {
+/*  node
+    .append('circle')
+      .attr('r', 18)
+      .style('fill', 'white');*/
+  node
+    .append('circle')
+      .attr('r', 14)
+      .style('stroke', 'white')
+      .style('fill', color[0]);
+  node
+    .append('path')
+      .attr('d', 'm 15,10 c -0.75521,-0.16056 -1.5342,0.1665 -1.93857,0.82062 -4.63828,7.51639 -12.119,7.73047 -12.95151,7.73047 -0.83846,0 -8.31323,-0.21408 -12.95151,-7.73047 -0.40436,-0.66006 -1.1893,-0.98713 -1.94451,-0.82062 -10.06745,2.21805 -12.72554,17.41734 -11.9406,29.7623 0.0594,0.95739 0.8563,1.70666 1.81964,1.70666 l 50.03397,0 c 0.96333,0 1.76017,-0.74927 1.81963,-1.70666 0.78495,-12.35685 -1.87315,-27.56804 -11.94654,-29.7623 z')
+      .style('stroke', 'white')
+      .style('fill', color[0]);
+  node
+    .append('text')
+      .attr('class', 'node-label')
+      .attr('y', 30)
+      .text(function (d) { return d.id; });
+}
+
+function peopleNode(model, node) {
+  for (var i = 2; i >= 0; i--) {
+    node
+      .append('circle')
+        .attr('r', 14)
+        .attr('cx', i*3)
+        .attr('cy', -i*2)
+        .style('stroke', 'white')
+        .style('fill', color[0]);
+    node
+      .append('path')
+        .attr('d', 'm '+(15+i*3)+','+(10-i*2)+' c -0.75521,-0.16056 -1.5342,0.1665 -1.93857,0.82062 -4.63828,7.51639 -12.119,7.73047 -12.95151,7.73047 -0.83846,0 -8.31323,-0.21408 -12.95151,-7.73047 -0.40436,-0.66006 -1.1893,-0.98713 -1.94451,-0.82062 -10.06745,2.21805 -12.72554,17.41734 -11.9406,29.7623 0.0594,0.95739 0.8563,1.70666 1.81964,1.70666 l 50.03397,0 c 0.96333,0 1.76017,-0.74927 1.81963,-1.70666 0.78495,-12.35685 -1.87315,-27.56804 -11.94654,-29.7623 z')
+        .style('stroke', 'white')
+        .style('fill', color[0]);
+  }
+  node
+    .append('text')
+      .attr('class', 'node-label')
+      .attr('y', 30)
+      .style('font-size', '0.65em')
+      .text(function (d) { return d.id; });
+}
+
+function personEdge(model, edge) {
+  edge
+    .append('svg:path')
+      .attr('class', 'edge-path')
+      .attr('marker-end', 'url(#arrow)');
+}
+
+var nodeViews = { A: personNode };
+var edgeViews = { f: personEdge };
+
+var nodeViews2 = { A: peopleNode };
+var edgeViews2 = { f: personEdge };
+
+var cat = new LGraphCategory(nodeLabels, edgeLabels);
+var graphA = cat.object();
+graphA.nodes.addAll(['Иван', 'Пётр', 'Мария', 'Алёна', 'Я']);
+graphA.nodeLabel.push('Я', 'A');
+graphA.nodeLabel.push('Иван', 'A');
+graphA.nodeLabel.push('Пётр', 'A');
+graphA.nodeLabel.push('Алёна', 'A');
+graphA.nodeLabel.push('Мария', 'A');
+
+var graphViewA = new GraphView(graphA, nodeViews, edgeViews);
+graphViewA.bind(d3.select('#graphA'));
+graphViewA.start();
+
+graphA.edges.addAll([1,2,3,4,5]);
+graphA.source.push(1, 'Я'); graphA.target.push(1, 'Иван');
+graphA.source.push(2, 'Я'); graphA.target.push(2, 'Пётр');
+graphA.source.push(3, 'Я'); graphA.target.push(3, 'Мария');
+graphA.source.push(4, 'Иван'); graphA.target.push(4, 'Я');
+graphA.source.push(5, 'Алёна'); graphA.target.push(5, 'Я');
+graphA.edgeLabel.push(1, 'f');
+graphA.edgeLabel.push(2, 'f');
+graphA.edgeLabel.push(3, 'f');
+graphA.edgeLabel.push(4, 'f');
+graphA.edgeLabel.push(5, 'f');
+
+var graphViewA2 = new GraphView(graphA, nodeViews, edgeViews);
+graphViewA2.bind(d3.select('#graphA2'));
+graphViewA2.start();
+
+graphA.edges.addAll([6,7,8]);
+graphA.source.push(6, 'Мария'); graphA.target.push(6, 'Алёна');
+graphA.source.push(7, 'Алёна'); graphA.target.push(7, 'Мария');
+graphA.source.push(8, 'Мария'); graphA.target.push(8, 'Пётр');
+graphA.edgeLabel.push(6, 'f');
+graphA.edgeLabel.push(7, 'f');
+graphA.edgeLabel.push(8, 'f');
+
+var graphViewA3 = new GraphView(graphA, nodeViews, edgeViews);
+graphViewA3.bind(d3.select('#graphA3'));
+graphViewA3.start();
+
+graphA.edges.addAll([9,10,11,12,13]);
+graphA.source.push(9, 'Я'); graphA.target.push(9, 'Я');
+graphA.source.push(10, 'Иван'); graphA.target.push(10, 'Иван');
+graphA.source.push(11, 'Алёна'); graphA.target.push(11, 'Алёна');
+graphA.source.push(12, 'Пётр'); graphA.target.push(12, 'Пётр');
+graphA.source.push(13, 'Мария'); graphA.target.push(13, 'Мария');
+graphA.edgeLabel.push(9, 'f');
+graphA.edgeLabel.push(10, 'f');
+graphA.edgeLabel.push(11, 'f');
+graphA.edgeLabel.push(12, 'f');
+graphA.edgeLabel.push(13, 'f');
+
+var graphViewA4 = new GraphView(graphA, nodeViews, edgeViews);
+graphViewA4.bind(d3.select('#graphA4'));
+graphViewA4.start();
+
+graphA.edges.addAll([14,15,16]);
+graphA.source.push(14, 'Пётр'); graphA.target.push(14, 'Мария');
+graphA.source.push(15, 'Пётр'); graphA.target.push(15, 'Мария');
+graphA.source.push(16, 'Пётр'); graphA.target.push(16, 'Мария');
+graphA.edgeLabel.push(14, 'f');
+graphA.edgeLabel.push(15, 'f');
+graphA.edgeLabel.push(16, 'f');
+
+var graphViewA5 = new GraphView(graphA, nodeViews, edgeViews);
+graphViewA5.bind(d3.select('#graphA5'));
+graphViewA5.start();
+
+var graphB = cat.object();
+graphB.nodes.addAll(['Иван и Ко', 'Пётр и Ко', 'Мария и Ко', 'Алёна и Ко', 'Я и Ко']);
+graphB.nodeLabel.push('Я и Ко', 'A');
+graphB.nodeLabel.push('Иван и Ко', 'A');
+graphB.nodeLabel.push('Пётр и Ко', 'A');
+graphB.nodeLabel.push('Алёна и Ко', 'A');
+graphB.nodeLabel.push('Мария и Ко', 'A');
+
+var graphViewB = new GraphView(graphB, nodeViews2, edgeViews2);
+graphViewB.bind(d3.select('#graphB'));
+graphViewB.start();
+
+graphB.edges.addAll([1,2,3,4,5]);
+graphB.source.push(1, 'Я и Ко'); graphB.target.push(1, 'Мария и Ко');
+graphB.source.push(2, 'Я и Ко'); graphB.target.push(2, 'Пётр и Ко');
+graphB.source.push(3, 'Мария и Ко'); graphB.target.push(3, 'Алёна и Ко');
+graphB.source.push(4, 'Пётр и Ко'); graphB.target.push(4, 'Алёна и Ко');
+graphB.source.push(5, 'Пётр и Ко'); graphB.target.push(5, 'Иван и Ко');
+graphB.edgeLabel.push(1, 'f');
+graphB.edgeLabel.push(2, 'f');
+graphB.edgeLabel.push(3, 'f');
+graphB.edgeLabel.push(4, 'f');
+graphB.edgeLabel.push(5, 'f');
+
+var graphViewB2 = new GraphView(graphB, nodeViews2, edgeViews2);
+graphViewB2.bind(d3.select('#graphB2'));
+graphViewB2.start();
+
+var setCat = new SetCategory();
+var objA = setCat.object([1,2,3]);
+var objB = setCat.object([1,2,3,4,5,6]);
+var f = setCat.morphism(objA, objB, {1: 1, 2: 2, 3: 3});
+var g = setCat.morphism(objA, objB, {1: 4, 2: 5, 3: 6});
+showSetCategoryView('graphC', setCat, {'A': objA, 'B': objB},
+  {'g': {dom: 'A', codom: 'B', morphism: f},
+   'f': {dom: 'A', codom: 'B', morphism: g}});
+
+};
+
+</script>
+  </head>
+  <body>
+    <svg class="graph" id="graphA" />
+    <p></p>
+    <svg class="graph" id="graphA2" />
+    <p></p>
+    <svg class="graph" id="graphA3" />
+    <p></p>
+    <svg class="graph" id="graphA4" />
+    <p></p>
+    <svg class="graph" id="graphA5" />
+    <p></p>
+    <svg class="graph" id="graphB" />
+    <p></p>
+    <svg class="graph" id="graphB2" />
+    <p></p>
+    <svg class="graph" id="graphC" />
+  </body>
+</html>

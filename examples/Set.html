@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script type="text/javascript" src="https://d3js.org/d3.v4.min.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../src/Helpers.js"></script>
+    <script type="text/javascript" src="../src/Category.js"></script>
+    <script type="text/javascript" src="../src/Diagram.js"></script>
+    <script type="text/javascript" src="../src/Set.js"></script>
+    <script type="text/javascript" src="../src/ViewHelpers.js"></script>
+    <script type="text/javascript" src="../src/SetCategoryView.js"></script>
+<script type="text/javascript">
+window.onload = function () {
+
+var setCat = new SetCategory();
+var T = setCat.terminal();
+var I = setCat.initial([]);
+var obj12 = setCat.object([1,2]);
+var obj123 = setCat.object([1,2,3]);
+var obj1234 = setCat.object([1,2,3,4]);
+var obj12345 = setCat.object([1,2,3,4,5]);
+var objAB = setCat.object(['a','b']);
+var objABC = setCat.object(['a','b','c']);
+var objABCD = setCat.object(['a','b','c','d']);
+var objABCDE = setCat.object(['a','b','c','d','e']);
+var objABCDEF = setCat.object(['a','b','c','d','e','f']);
+var objABCDEFG = setCat.object(['a','b','c','d','e','f','g']);
+
+var f = setCat.morphism(obj123, objABCD, {1: 'c', 2: 'c', 3: 'd'});
+var g = setCat.morphism(objABCD, objAB, {'a': 'a', 'b': 'b'});
+var h = setCat.morphism(objAB, obj123, {'a': 1, 'b': 1});
+showSetCategoryView('diagram1', setCat, {'A': obj123, 'B': objABCD, 'C': objAB},
+  {'f': {dom: 'A', codom: 'B', morphism: f},
+   'g': {dom: 'B', codom: 'C', morphism: g},
+   'h': {dom: 'C', codom: 'A', morphism: h}});
+
+var f2 = setCat.morphism(obj1234, obj123, {1: 1, 2: 2, 3: 3, 4: 3});
+showSetCategoryView('diagram2', setCat, {'A': obj1234, 'B': obj123},
+  {'f': {dom: 'A', codom: 'B', morphism: f2}});
+
+var e22 = setCat.morphism(obj1234, obj123,  {1: 1, 2: 2, 3: 3, 4: 3});
+var f22 = setCat.morphism(obj123,  objABCD, {1: 'a', 2: 'b', 3: 'c'});
+var g22 = setCat.morphism(obj123,  objABCD, {1: 'a', 2: 'b', 3: 'c'});
+showSetCategoryView('diagram22', setCat, {'A': obj1234, 'B': obj123, 'C': objABCD},
+  {'e': {dom: 'A', codom: 'B', morphism: e22},
+   'f': {dom: 'B', codom: 'C', morphism: f22},
+   'g': {dom: 'B', codom: 'C', morphism: g22}});
+
+var h23 = setCat.morphism(obj1234, obj123,  {1: 2, 2: 2, 3: 3, 4: 3});
+var f23 = setCat.morphism(obj123,  objABCD, {1: 'a', 2: 'b', 3: 'c'});
+var g23 = setCat.morphism(obj123,  objABCD, {1: 'b', 2: 'b', 3: 'c'});
+showSetCategoryView('diagram23', setCat, {'A': obj1234, 'B': obj123, 'C': objABCD},
+  {'h': {dom: 'A', codom: 'B', morphism: h23},
+   'f': {dom: 'B', codom: 'C', morphism: f23},
+   'g': {dom: 'B', codom: 'C', morphism: g23}});
+
+var f3 = setCat.morphism(obj1234, obj12345, {1: 1, 2: 2, 3: 3, 4: 4});
+showSetCategoryView('diagram3', setCat, {'A': obj1234, 'B': obj12345},
+  {'f': {dom: 'A', codom: 'B', morphism: f3}});
+
+var m32 = setCat.morphism(obj123,  obj1234, {1: 1, 2: 2, 3: 3});
+var f32 = setCat.morphism(objABCD, obj123,  {'a': 1, 'b': 2, 'c': 3, 'd': 3});
+var g32 = setCat.morphism(objABCD, obj123,  {'a': 1, 'b': 2, 'c': 3, 'd': 3});
+showSetCategoryView('diagram32', setCat, {'A': obj123, 'B': obj1234, 'C': objABCD},
+  {'m': {dom: 'A', codom: 'B', morphism: m32},
+   'f': {dom: 'C', codom: 'A', morphism: f32},
+   'g': {dom: 'C', codom: 'A', morphism: g32}});
+
+var f4 = setCat.morphism(obj1234, obj1234, {1: 1, 2: 2, 3: 3, 4: 4});
+showSetCategoryView('diagram4', setCat, {'A': obj1234, 'B': obj1234},
+  {'f': {dom: 'A', codom: 'B', morphism: f4}});
+
+var f42 = setCat.morphism(obj123,  objABC, {1: 'a', 2: 'b', 3: 'c'});
+showSetCategoryView('diagram42', setCat, {'A': obj123, 'B': objABC},
+  {'f':   {dom: 'A', codom: 'B', morphism: f42},
+   'g':   {dom: 'B', codom: 'A', morphism: f42.inv()},
+   'idA': {dom: 'A', codom: 'A', morphism: setCat.id(obj123)},
+   'idB': {dom: 'B', codom: 'B', morphism: setCat.id(objABC)}});
+
+showSetCategoryView('diagram5', setCat, {'A': obj1234, 'B': objABC, 'T': T.obj},
+  {'f': {dom: 'A', codom: 'T', morphism: T.univ(obj1234)},
+   'g': {dom: 'B', codom: 'T', morphism: T.univ(objABC)}});
+
+var elT = T.obj.representative();
+var f52 = setCat.morphism(T.obj, obj1234);
+f52.push(elT, 1);
+var g52 = setCat.morphism(T.obj, obj1234);
+g52.push(elT, 2);
+var h52 = setCat.morphism(T.obj, objAB);
+h52.push(elT, 'a');
+showSetCategoryView('diagram52', setCat, {'A1': obj1234, 'A2': obj1234, 'B': objABC, 'T': T.obj},
+  {'f': {dom: 'T', codom: 'A1', morphism: f52},
+   'g': {dom: 'T', codom: 'A2', morphism: g52},
+   'h': {dom: 'T', codom: 'B',  morphism: h52}});
+
+showSetCategoryView('diagram6', setCat, {'A': obj1234, 'B': objABC, 'I': I.obj},
+  {'f': {dom: 'I', codom: 'A', morphism: I.univ(obj1234)},
+   'g': {dom: 'I', codom: 'B', morphism: I.univ(objABC)}});
+
+var prod12AB = setCat.product(obj12, objAB);
+var p71 = setCat.morphism(obj12345, obj12, {1:  1,  2:  1,  3:  2,  4:  2,  5:  2});
+var q71 = setCat.morphism(obj12345, objAB, {1: 'a', 2: 'b', 3: 'a', 4: 'b', 5: 'b'});
+showSetCategoryView('diagram71', setCat, {'A': obj12, 'B': objAB, 'AxB': prod12AB.obj, 'C': obj12345},
+  {'π1': {dom: 'AxB', codom: 'A',   morphism: prod12AB.f},
+   'π2': {dom: 'AxB', codom: 'B',   morphism: prod12AB.g},
+   'f1': {dom: 'C',   codom: 'A',   morphism: p71},
+   'f2': {dom: 'C',   codom: 'B',   morphism: q71},
+   'u':  {dom: 'C',   codom: 'AxB', morphism: prod12AB.univ(p71, q71)}});
+
+var prod123AB = setCat.product(obj123, objAB);
+showSetCategoryView('diagram7', setCat, {'A': obj123, 'B': objAB, 'AxB': prod123AB.obj},
+  {'f': {dom: 'AxB', codom: 'A', morphism: prod123AB.f},
+   'g': {dom: 'AxB', codom: 'B', morphism: prod123AB.g}});
+
+showSetCategoryView('diagram72', setCat, {'A': obj12, 'B': objAB, 'AxB': prod12AB.obj, 'C': obj12345},
+  {'f1': {dom: 'C',   codom: 'A',   morphism: p71},
+   'f2': {dom: 'C',   codom: 'B',   morphism: q71},
+   'u':  {dom: 'C',   codom: 'AxB', morphism: prod12AB.univ(p71, q71)}});
+
+var sum123AB = setCat.coproduct(obj123, objAB);
+var p81 = setCat.morphism(obj123, objABC, { 1 : 'a',  2 : 'b', 3: 'c'});
+var q81 = setCat.morphism(objAB,  objABC, {'a': 'a', 'b': 'b'});
+showSetCategoryView('diagram81', setCat, {'A': obj123, 'B': objAB, 'A+B': sum123AB.obj, 'C': objABC},
+  {'i1': {dom: 'A',   codom: 'A+B', morphism: sum123AB.f},
+   'i2': {dom: 'B',   codom: 'A+B', morphism: sum123AB.g},
+   'f1': {dom: 'A',   codom: 'C',   morphism: p81},
+   'f2': {dom: 'B',   codom: 'C',   morphism: q81},
+   'u':  {dom: 'A+B', codom: 'C',   morphism: sum123AB.univ(p81, q81)}});
+
+showSetCategoryView('diagram8', setCat, {'A': obj123, 'B': objAB, 'A+B': sum123AB.obj},
+  {'f': {dom: 'A', codom: 'A+B', morphism: sum123AB.f},
+   'g': {dom: 'B', codom: 'A+B', morphism: sum123AB.g}});
+
+var f82 = setCat.morphism(obj123, objABC, { 1 : 'a',  2 : 'b', 3: 'c'});
+var g82 = setCat.morphism(objAB,  objABC, {'a': 'b', 'b': 'c'});
+showSetCategoryView('diagram82', setCat, {'A': obj123, 'B': objAB, 'A+B': sum123AB.obj, 'C': objABC},
+  {'p': {dom: 'A',   codom: 'C', morphism: f82},
+   'q': {dom: 'B',   codom: 'C', morphism: g82},
+   'u': {dom: 'A+B', codom: 'C', morphism: sum123AB.univ(f82, g82)}});
+
+var sum123ABcomp = setCat.coproductComplement(sum123AB.f);
+showSetCategoryView('diagram83', setCat, {'A': sum123ABcomp.f.dom(), 'B': sum123ABcomp.g.dom(), 'A+B': sum123ABcomp.obj},
+  {'i1': {dom: 'A',   codom: 'A+B', morphism: sum123ABcomp.f},
+   'i2': {dom: 'B',   codom: 'A+B', morphism: sum123ABcomp.g}});
+
+var f9 = setCat.morphism(obj1234, objABC,  {1: 'a', 2: 'a', 3: 'b', 4: 'c'});
+var g9 = setCat.morphism(obj1234, objABC,  {1: 'a', 2: 'b', 3: 'b', 4: 'b'});
+var m9 = setCat.morphism(obj123,  obj1234, {1:  1,  2:  1,  3:  3});
+var eq1 = setCat.equalizer(f9, g9);
+showSetCategoryView('diagram91', setCat, {'X': obj1234, 'Y': objABC, 'E': eq1.obj, 'O': obj123},
+  {'f':  {dom: 'X', codom: 'Y', morphism: f9},
+   'g':  {dom: 'X', codom: 'Y', morphism: g9},
+   'eq': {dom: 'E', codom: 'X', morphism: eq1.q},
+   'm':  {dom: 'O', codom: 'X', morphism: m9},
+   'u':  {dom: 'O', codom: 'E', morphism: eq1.univ(m9)}});
+
+showSetCategoryView('diagram9', setCat, {'X1': obj1234, 'X2': obj1234, 'Y': objABC, 'E': eq1.obj},
+  {'f':   {dom: 'X1', codom: 'Y', morphism: f9},
+   'g':   {dom: 'X2', codom: 'Y', morphism: g9},
+   'eq1': {dom: 'E',  codom: 'X1', morphism: eq1.q},
+   'eq2': {dom: 'E',  codom: 'X2', morphism: eq1.q}});
+
+var f10 = setCat.morphism(obj1234,   objABCDEF, {1: 'a', 2: 'b', 3: 'c', 4: 'e'});
+var g10 = setCat.morphism(obj1234,   objABCDEF, {1: 'a', 2: 'c', 3: 'd', 4: 'f'});
+var m10 = setCat.morphism(objABCDEF, obj12,     {'a': 1, 'b': 1, 'c': 1, 'd': 1, 'e': 2, 'f': 2});
+var coeq1 = setCat.coequalizer(f10, g10);
+showSetCategoryView('diagram101', setCat, {'X': obj1234, 'X': obj1234, 'Y': objABCDEF, 'Q': coeq1.obj, 'O': obj12},
+  {'f': {dom: 'X', codom: 'Y', morphism: f10},
+   'g': {dom: 'X', codom: 'Y', morphism: g10},
+   'q': {dom: 'Y', codom: 'Q', morphism: coeq1.q},
+   'm': {dom: 'Y', codom: 'O', morphism: m10},
+   'u': {dom: 'Q', codom: 'O', morphism: coeq1.univ(m10)}});
+
+showSetCategoryView('diagram10', setCat, {'X1': obj1234, 'X2': obj1234, 'Y': objABCDEF, 'Q': coeq1.obj},
+  {'f': {dom: 'X1', codom: 'Y', morphism: f10},
+   'g': {dom: 'X2', codom: 'Y', morphism: g10},
+   'q': {dom: 'Y',  codom: 'Q', morphism: coeq1.q}});
+
+var f11 = setCat.morphism(obj1234,  objABC, {1: 'a', 2: 'a', 3: 'b', 4: 'c'});
+var g11 = setCat.morphism(obj12345, objABC, {1: 'a', 2: 'b', 3: 'b', 4: 'c', 5: 'c'});
+var pb1 = setCat.pullback(f11, g11);
+var m11 = setCat.morphism(objABCDEFG, obj1234,  {'a': 1, 'b': 2, 'c': 3, 'd': 3, 'e': 4, 'f': 4, 'g': 4});
+var n11 = setCat.morphism(objABCDEFG, obj12345, {'a': 1, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'g': 5});
+showSetCategoryView('diagram11', setCat, {'X': obj1234, 'Y': obj12345, 'Z': objABC, 'P': pb1.obj, 'Q': objABCDEFG},
+  {'f': {dom: 'X', codom: 'Z', morphism: f11},
+   'g': {dom: 'Y', codom: 'Z', morphism: g11},
+   'p': {dom: 'P', codom: 'X', morphism: pb1.p},
+   'q': {dom: 'P', codom: 'Y', morphism: pb1.q},
+   'm': {dom: 'Q', codom: 'X', morphism: m11},
+   'n': {dom: 'Q', codom: 'Y', morphism: n11},
+   'u': {dom: 'Q', codom: 'P', morphism: pb1.univ(m11, n11)}});
+
+showSetCategoryView('diagram112', setCat, {'X': obj1234, 'Y': obj12345, 'Z': objABC, 'P': pb1.obj},
+  {'f': {dom: 'X', codom: 'Z', morphism: f11},
+   'g': {dom: 'Y', codom: 'Z', morphism: g11},
+   'p': {dom: 'P', codom: 'X', morphism: pb1.p},
+   'q': {dom: 'P', codom: 'Y', morphism: pb1.q}});
+
+showSetCategoryView('diagram113', setCat, {'X': obj1234, 'Y': obj12345, 'Z': objABC, 'P': pb1.obj, 'X x Y': pb1.product().obj},
+  {'f':  {dom: 'X',     codom: 'Z',     morphism: f11},
+   'g':  {dom: 'Y',     codom: 'Z',     morphism: g11},
+   'p':  {dom: 'P',     codom: 'X',     morphism: pb1.p},
+   'q':  {dom: 'P',     codom: 'Y',     morphism: pb1.q},
+   'π1': {dom: 'X x Y', codom: 'X',     morphism: pb1.product().f},
+   'π2': {dom: 'X x Y', codom: 'Y',     morphism: pb1.product().g},
+   'eq': {dom: 'P',     codom: 'X x Y', morphism: pb1.equalizer().q}});
+
+var f12 = setCat.morphism(obj123,  objABC,  {1: 'a', 2: 'b', 3: 'c'});
+var g12 = setCat.morphism(obj123,  objABCD, {1: 'a', 2: 'b', 3: 'd'});
+var m12 = setCat.morphism(objABC,  objAB,   {'a': 'a', 'b': 'b', 'c': 'b'});
+var n12 = setCat.morphism(objABCD, objAB,   {'a': 'a', 'b': 'b', 'c': 'b', 'd': 'b'});
+var po1 = setCat.pushout(f12, g12);
+showSetCategoryView('diagram12', setCat, {'X': objABC, 'Y': objABCD, 'Z': obj123, 'P': po1.obj, 'Q': objAB},
+  {'f': {dom: 'Z', codom: 'X', morphism: f12},
+   'g': {dom: 'Z', codom: 'Y', morphism: g12},
+   'p': {dom: 'X', codom: 'P', morphism: po1.p},
+   'q': {dom: 'Y', codom: 'P', morphism: po1.q},
+   'm': {dom: 'X', codom: 'Q', morphism: m12},
+   'n': {dom: 'Y', codom: 'Q', morphism: n12},
+   'u': {dom: 'P', codom: 'Q', morphism: po1.univ(m12, n12)}});
+
+showSetCategoryView('diagram122', setCat, {'X': objABC, 'Y': objABCD, 'Z': obj123, 'P': po1.obj},
+  {'f': {dom: 'Z', codom: 'X', morphism: f12},
+   'g': {dom: 'Z', codom: 'Y', morphism: g12},
+   'p': {dom: 'X', codom: 'P', morphism: po1.p},
+   'q': {dom: 'Y', codom: 'P', morphism: po1.q}});
+
+showSetCategoryView('diagram123', setCat, {'X': objABC, 'Y': objABCD, 'Z': obj123, 'P': po1.obj, 'X+Y': po1.coproduct().obj},
+  {'f':  {dom: 'Z',   codom: 'X',   morphism: f12},
+   'g':  {dom: 'Z',   codom: 'Y',   morphism: g12},
+   'p':  {dom: 'X',   codom: 'P',   morphism: po1.p},
+   'q':  {dom: 'Y',   codom: 'P',   morphism: po1.q},
+   'i1': {dom: 'X',   codom: 'X+Y', morphism: po1.coproduct().f},
+   'i2': {dom: 'Y',   codom: 'X+Y', morphism: po1.coproduct().g},
+   'h':  {dom: 'X+Y', codom: 'P',   morphism: po1.coequalizer().q}});
+
+};
+</script>
+  </head>
+  <body>
+    <h1>Category of sets</h1>
+    <p>The full description is available <a href="https://habrahabr.ru/company/cit/blog/313254/">here</a> in Russian.</p>
+
+    <h2>Sample objects and morphisms</h2>
+    <p>In the category of sets objects are sets, morphisms are total functions, and a morphism composition is a function composition.</p>
+    <p>Double click on object to show or hide its internal structure.</p>
+    <p>To fix the node position, drag it with the Ctrl key pressed.</p>
+    <svg class="diagram" id="diagram1" style="width: 450px; height: 350px;" />
+
+    <h2>Epimorphism</h2>
+    <p>In the category of sets, the epimorphism is the surjective function.</p>
+    <svg class="diagram" id="diagram2" style="width: 450px; height: 250px;" />
+    <p>Commutative diagram for epimorphism e and two morphisms f and g.</p>
+    <svg class="diagram" id="diagram22" style="width: 450px; height: 250px;" />
+    <p>The diagram commutes (f h = g h) but f != g, because h is not epimorphism.</p>
+    <svg class="diagram" id="diagram23" style="width: 450px; height: 250px;" />
+
+    <h2>Monomorphism</h2>
+    <p>In the category of sets, the monomorphism is the injective function.</p>
+    <svg class="diagram" id="diagram3" style="width: 450px; height: 250px;" />
+    <p>Commutative diagram for monomorphism m and two morphisms f and g.</p>
+    <svg class="diagram" id="diagram32" style="width: 450px; height: 250px;" />
+
+    <h2>Isomorphism</h2>
+    <p>In the category of sets, the isomorphism is the bijective function.</p>
+    <svg class="diagram" id="diagram4" style="width: 450px; height: 250px;" />
+    <p>Commutative diagram for isomorphism f.</p>
+    <svg class="diagram" id="diagram42" style="width: 450px; height: 250px;" />
+
+    <h2>Terminal, initial and null object</h2>
+    <p>In the category of sets, the terminal object is the singleton set.</p>
+    <svg class="diagram" id="diagram5" style="width: 450px; height: 250px;" />
+    <p>There are exists non-unique morphisms with a terminal object domain.</p>
+    <svg class="diagram" id="diagram52" style="width: 450px; height: 300px;" />
+    <p>In the category of sets, the initial object is the empty set.</p>
+    <svg class="diagram" id="diagram6" style="width: 450px; height: 250px;" />
+
+    <h2>Product</h2>
+    <p>Commutative diagram.</p>
+    <svg class="diagram" id="diagram71" style="width: 450px; height: 300px;" />
+    <p>In the category of sets, the product is the cartesian product.</p>
+    <svg class="diagram" id="diagram7" style="width: 450px; height: 300px;" />
+    <p>The universal property.</p>
+    <svg class="diagram" id="diagram72" style="width: 450px; height: 450px;" />
+
+    <h2>Coproduct</h2>
+    <p>Commutative diagram.</p>
+    <svg class="diagram" id="diagram81" style="width: 450px; height: 300px;" />
+    <p>In the category of sets, the coproduct is the disjoint union.</p>
+    <svg class="diagram" id="diagram8" style="width: 450px; height: 300px;" />
+    <p>The universal property.</p>
+    <svg class="diagram" id="diagram82" style="width: 450px; height: 450px;" />
+    <p>Complement.</p>
+    <svg class="diagram" id="diagram83" style="width: 450px; height: 300px;" />
+
+    <h2>Equalizer</h2>
+    <p></p>
+    <svg class="diagram" id="diagram91" style="width: 450px; height: 300px;" />
+    <p></p>
+    <svg class="diagram" id="diagram9" style="width: 450px; height: 450px;" />
+
+    <h2>Coequalizer</h2>
+    <p></p>
+    <svg class="diagram" id="diagram101" style="width: 450px; height: 300px;" />
+    <p></p>
+    <svg class="diagram" id="diagram10" style="width: 450px; height: 450px;" />
+
+    <h2>Pullback</h2>
+    <p></p>
+    <svg class="diagram" id="diagram11" style="width: 450px; height: 450px;" />
+    <p></p>
+    <svg class="diagram" id="diagram112" style="width: 450px; height: 450px;" />
+    <p></p>
+    <svg class="diagram" id="diagram113" style="width: 450px; height: 450px;" />
+
+    <h2>Pushout</h2>
+    <p></p>
+    <svg class="diagram" id="diagram12" style="width: 450px; height: 450px;" />
+    <p></p>
+    <svg class="diagram" id="diagram122" style="width: 450px; height: 450px;" />
+    <p></p>
+    <svg class="diagram" id="diagram123" style="width: 450px; height: 450px;" />
+
+  </body>
+</html>
