@@ -1,6 +1,7 @@
 'use strict';
 
-// TODO: Reverse order of morphisms composition?
+// TODO: Remove tryCastToInt?
+// TODO: Use custom Set implementation only if Set from ES6 isn't supported.
 
 /////////////////////////////////////////////////////////////////////////////
 // SetCategory
@@ -430,6 +431,7 @@ TotalFunction.prototype.inv = function () {
   return f;
 };
 
+// TODO: It's an automorphism
 TotalFunction.prototype.initId = function () {
   var dom = this.dom();
   var codom = this.codom();
@@ -443,6 +445,8 @@ TotalFunction.prototype.isId = function () {
   return this.dom().equals(this.codom()) && this.isIso();
 };
 
+// TODO: Rename to isInjective? For now TotalFunction implements
+//       two interfaces: function and morphism.
 TotalFunction.prototype.isMono = function () {
   var image = new Set();
   for (var prop in this._mapping) {

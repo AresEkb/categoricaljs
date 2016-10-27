@@ -219,7 +219,7 @@ function GraphView(model, nodeViews, edgeViews) {
     vis.selectAll('.edge-path').attr('d', function(d) {
       if (d.source === d.target) {
         var p0 = { x: d.source.x, y: d.source.y, r: nodeRadius(d.source) + 3 };
-        var p = calcLoopCurve(p0, d.ordinal);
+        var p = loopCurve(p0, d.ordinal);
         return 'M' + p[0].x + ',' + p[0].y +
                'Q' + p[1].x + ',' + p[1].y + ' ' + p[2].x + ',' + p[2].y +
                'T' + p[3].x + ',' + p[3].y;
@@ -227,7 +227,7 @@ function GraphView(model, nodeViews, edgeViews) {
       else {
         var p0 = { x: d.source.x, y: d.source.y, r: nodeRadius(d.source) + 1 };
         var p2 = { x: d.target.x, y: d.target.y, r: nodeRadius(d.target) + 3 };
-        var p = calcLinkCurve(p0, p2, d.ordinal);
+        var p = linkCurve(p0, p2, d.ordinal);
         return 'M' + p[0].x + ',' + p[0].y +
                'Q' + p[1].x + ',' + p[1].y + ' ' + p[2].x + ',' + p[2].y;
       }
@@ -235,12 +235,12 @@ function GraphView(model, nodeViews, edgeViews) {
     vis.selectAll('.edge-label').attr('transform', function (d) {
       var x, y;
       if (d.source == d.target) {
-        var p = calcLoopCurve(d.source, d.ordinal);
+        var p = loopCurve(d.source, d.ordinal);
         x = p[2].x;
         y = p[2].y;
       }
       else {
-        var p = calcLinkCurve(d.source, d.target, d.ordinal / 1.2);
+        var p = linkCurve(d.source, d.target, d.ordinal / 1.2);
         x = p[1].x;
         y = p[1].y;
       }

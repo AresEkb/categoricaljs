@@ -151,7 +151,7 @@ function SetCategoryView(model) {
     hullData.enter()
       .append("path")
         .attr("class", "hull")
-        .attr("d", drawCluster)
+        .attr("d", function (d) { return hullCurve(d.path); })
         .style("fill", function (d) { return brighter(color[d.group]); })
         .on("dblclick", function (d) { expand[d.group] = false; init(); });
     hulls = hullg.selectAll("path.hull");
@@ -295,13 +295,13 @@ function SetCategoryView(model) {
   function ticked() {
     if (!hulls.empty()) {
       hulls.data(convexHulls(net.nodes, getGroup, off))
-        .attr("d", drawCluster);
+        .attr("d", function (d) { return hullCurve(d.path); });
     }
 
     links.selectAll('.link-path').attr('d', function (d) {
       if (d.source === d.target) {
         var p0 = { x: d.source.x, y: d.source.y, r: nodeRadius(d.source) + 3 };
-        var p = calcLoopCurve(p0, d.ordinal);
+        var p = loopCurve(p0, d.ordinal);
         return 'M' + p[0].x + ',' + p[0].y +
                'Q' + p[1].x + ',' + p[1].y + ' ' + p[2].x + ',' + p[2].y +
                'T' + p[3].x + ',' + p[3].y;
@@ -309,7 +309,7 @@ function SetCategoryView(model) {
       else {
         var p0 = { x: d.source.x, y: d.source.y, r: nodeRadius(d.source) + 1 };
         var p2 = { x: d.target.x, y: d.target.y, r: nodeRadius(d.target) + 3 };
-        var p = calcLinkCurve(p0, p2, d.ordinal);
+        var p = linkCurve(p0, p2, d.ordinal);
         return 'M' + p[0].x + ',' + p[0].y +
                'Q' + p[1].x + ',' + p[1].y + ' ' + p[2].x + ',' + p[2].y;
       }
@@ -318,14 +318,14 @@ function SetCategoryView(model) {
     links.selectAll('.link-label').attr('transform', function (d) {
       var x, y;
       if (d.source == d.target) {
-        var p = calcLoopCurve(d.source, d.ordinal);
+        var p = loopCurve(d.source, d.ordinal);
         x = p[2].x;
         y = p[2].y;
       }
       else {
         var p0 = { x: d.source.x, y: d.source.y, r: nodeRadius(d.source) + 1 };
         var p2 = { x: d.target.x, y: d.target.y, r: nodeRadius(d.target) + 3 };
-        var p = calcLinkCurve(p0, p2, d.ordinal / 1.2);
+        var p = linkCurve(p0, p2, d.ordinal / 1.2);
         x = p[1].x;
         y = p[1].y;
       }
@@ -470,10 +470,6 @@ function convexHulls(nodes, index, offset) {
   }
 
   return hullset;
-}
-
-function drawCluster(d) {
-  return curve(d.path);
 }
 
 function showSetCategoryView(viewId, category, objects, morphisms) {

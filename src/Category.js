@@ -9,6 +9,9 @@
 
 // TODO: Add prefix I to mixins to distinguish them from classes?
 
+// TODO: Don't create instances of categories? Export SetCategory.prototype,
+//       GraphCategory.prototype, ... instead?
+
 /////////////////////////////////////////////////////////////////////////////
 // Category Class
 

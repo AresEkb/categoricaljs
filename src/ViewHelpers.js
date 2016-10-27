@@ -23,86 +23,79 @@ function calcOrdinal(adjMatrix, ordMatrix, source, target) {
   return ordinal;
 }
 
-var shift1 = [0, 1, 2, 3, 4].map(function (i) {
-  var a = Math.PI / 3 * i * 1.2 + 0.3;
-  return { x : Math.cos(a), y : Math.sin(a) };
-});
-var shift2 = [0, 1, 2, 3, 4].map(function (i) {
-  var a = Math.PI / 3 * (i + 0.2) * 1.2 + 0.3;
-  return { x : Math.cos(a), y : Math.sin(a) };
-});
-
-function calcLinkCurve(source, target, ordinal) {
+function linkCurve(source, target, ordinal) {
   var dx = target.x - source.x,
       dy = target.y - source.y;
-  var m;
-  var p0, p2;
   if (ordinal == 0) {
-    m = {
-      x: (source.x + target.x) / 2,
-      y: (source.y + target.y) / 2
-    };
-    var l = Math.sqrt(dx * dx + dy * dy);
-    p0 = {
-      x: source.x + dx * source.r / l,
-      y: source.y + dy * source.r / l
-    };
-    p2 = {
-      x: target.x - dx * target.r / l,
-      y: target.y - dy * target.r / l
-    };
+    var len = Math.sqrt(dx * dx + dy * dy);
+    return [
+      { x: source.x + dx * source.r / len,
+        y: source.y + dy * source.r / len },
+      { x: (source.x + target.x) / 2,
+        y: (source.y + target.y) / 2 },
+      { x: target.x - dx * target.r / len,
+        y: target.y - dy * target.r / len }];
   }
   else {
-    m = {
-      x: (source.x + target.x) / 2 + dy / 5 * (ordinal - Math.sign(ordinal) * 0.5),
-      y: (source.y + target.y) / 2 - dx / 5 * (ordinal - Math.sign(ordinal) * 0.5)
-    };
+    var k = (ordinal - Math.sign(ordinal) * 0.5) / 5;
+    var m = {
+      x: (source.x + target.x) / 2 + k * dy,
+      y: (source.y + target.y) / 2 - k * dx };
     var bezier = [source, m, target];
-    var t0 = source.r / quadraticBezierLength(bezier);
-    var t2 = 1 - target.r / quadraticBezierLength(bezier);
-    p0 = getPointAtQuadraticBezier(bezier, t0);
-    p2 = getPointAtQuadraticBezier(bezier, t2);
+    var len = quadraticBezierLength(bezier);
+    return [
+      quadraticBezierPoint(bezier, source.r / len),
+      m,
+      quadraticBezierPoint(bezier, 1 - target.r / len) ];
   }
-  return [p0, m, p2];
 }
 
-function calcLoopCurve(source, ordinal) {
+var loopCurveShift = [0, 1, 2, 3, 4].map(function (i) {
+  return [
+    polarToCartesian(Math.PI / 3 * i * 1.2 + 0.3),
+    polarToCartesian(Math.PI / 3 * (i + 0.2) * 1.2 + 0.3) ];
+});
+
+function loopCurve(source, ordinal) {
   var i1 = ordinal % 5,
       i2 = (ordinal + 4) % 5;
   var dr = 50 + 20 * Math.floor((ordinal - 1) / 5);
-  var x1 = source.x + shift1[i1].x * dr,
-      y1 = source.y - shift1[i1].y * dr,
-      x2 = source.x + shift2[i2].x * dr,
-      y2 = source.y - shift2[i2].y * dr;
+  var x1 = source.x + loopCurveShift[i1][0].x * dr,
+      y1 = source.y - loopCurveShift[i1][0].y * dr,
+      x2 = source.x + loopCurveShift[i2][1].x * dr,
+      y2 = source.y - loopCurveShift[i2][1].y * dr;
   var xm = (x1 + x2) / 2,
       ym = (y1 + y2) / 2;
-  var bezier0 = [source, { x: x1, y: y1 }, { x: xm, y: ym }];
-  var t0 = source.r / 2 / quadraticBezierLength(bezier0);
-  var p0 = getPointAtQuadraticBezier(bezier0, t0);
+  var bezier = [source, { x: x1, y: y1 }, { x: xm, y: ym }];
+  var t0 = source.r / 2 / quadraticBezierLength(bezier);
+  var p0 = quadraticBezierPoint(bezier, t0);
   var p3 = reflect(p0, source, { x: xm, y: ym });
   return [p0, { x: x1, y: y1 }, { x: xm, y: ym }, p3];
 }
 
-function getPointAtQuadraticBezier(p, t) {
-  var x = (1 - t) * (1 - t) * p[0].x + 2 * (1 - t) * t * p[1].x + t * t * p[2].x;
-  var y = (1 - t) * (1 - t) * p[0].y + 2 * (1 - t) * t * p[1].y + t * t * p[2].y;
-  return { x: x, y: y };
+function polarToCartesian(a) {
+  return { x : Math.cos(a), y : Math.sin(a) };
 }
 
 function reflect(p, p0, p1) {
-  var dx = p1.x - p0.x;
-  var dy = p1.y - p0.y;
-  var a = (dx * dx - dy * dy) / (dx * dx + dy * dy);
-  var b = 2 * dx * dy / (dx * dx + dy * dy);
+  var dx = p1.x - p0.x,
+      dy = p1.y - p0.y;
+  var dx2 = dx * dx,
+      dy2 = dy * dy;
+  var a = (dx2 - dy2) / (dx2 + dy2),
+      b = 2 * dx * dy / (dx2 + dy2);
   var x = a * (p.x - p0.x) + b * (p.y - p0.y) + p0.x;
   var y = b * (p.x - p0.x) - a * (p.y - p0.y) + p0.y;
-  return { x:x, y:y };
+  return { x: x, y: y };
 }
 
-function euclideanLength(p) {
-  var dx = p[1].x - p[0].x;
-  var dy = p[1].y - p[0].y;
-  return Math.sqrt(dx * dx + dy * dy);
+function quadraticBezierPoint(p, t) {
+  var t0 = (1 - t) * (1 - t),
+      t1 = 2 * (1 - t) * t,
+      t2 = t * t;
+  var x = t0 * p[0].x + t1 * p[1].x + t2 * p[2].x;
+  var y = t0 * p[0].y + t1 * p[1].y + t2 * p[2].y;
+  return { x: x, y: y };
 }
 
 function quadraticBezierLength(p) {
@@ -129,4 +122,4 @@ function quadraticBezierLength(p) {
 
 var color = d3.schemeCategory10;
 var brighter = function (color) { return d3.hsl(color).brighter(1); };
-var curve = d3.line().curve(d3.curveCardinal.tension(0.3));
+var hullCurve = d3.line().curve(d3.curveCardinal.tension(0.3));

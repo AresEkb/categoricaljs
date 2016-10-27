@@ -161,7 +161,3 @@ function quoteSetElement(element) {
   return typeof element == 'string' && element.indexOf(',') > -1
     ? '\'' + element.replace('\'', '\\\'') + '\'' : element;
 }
-
-function output(name, value) {
-  $('#output').append('<p class="variable-definition"><span class="variable-name">' + name + '</span> = <span class="variable-value">' + value + '</span></p>');
-};
