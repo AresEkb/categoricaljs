@@ -7,23 +7,29 @@
 
 //function GraphCategory(nodeAlphabet, edgeAlphabet, elementKinds) {
 function GraphCategory() {
-  this.object = function() {
-    return new Graph();
-  };
-
-  this.morphism = function(objA, objB) {
-    return new GraphMorphism(objA, objB);
-  };
-
-  this.pushout = function(f, g) {
-    return new GraphPushout(this).calculate(f, g);
-  };
-
-  this.pushoutComplement = function(f, p) {
-    return new GraphPushout(this).complement(f, p);
-    // return new GraphPushoutComplement(this, f, p);
-  };
 }
+
+extend(GraphCategory, Category, BicompleteCategory);
+
+GraphCategory.prototype.object = function() {
+  return new Graph();
+};
+
+GraphCategory.prototype.morphism = function(objA, objB) {
+  return new GraphMorphism(objA, objB);
+};
+
+GraphCategory.prototype.compose = function (g, f) {
+  return g.compose(f);
+};
+
+GraphCategory.prototype.pushout = function(f, g) {
+  return new GraphPushout(this).calculate(f, g);
+};
+
+GraphCategory.prototype.pushoutComplement = function(f, p) {
+  return new GraphPushout(this).complement(f, p);
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 // Graph
@@ -44,6 +50,10 @@ function Graph() {
   this.equals = function (graph) {
     return this.nodes.equals(graph.nodes) && this.edges.equals(graph.edges) &&
            this.source.equals(graph.source) && this.target.equals(graph.target);
+  };
+
+  this.size = function () {
+    return this.nodes.size();
   };
 
   this.randomInit = function(nodeCount, edgeCount, elementKind) {

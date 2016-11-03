@@ -1,6 +1,6 @@
 'use strict';
 
-var color = d3.scale.category10();
+//var color = d3.scale.category10();
 
 function SetOfPairs(elements) {
   SetOfPairs.base.constructor.call(this, elements);

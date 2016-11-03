@@ -62,7 +62,8 @@ function GraphView(model, nodeViews, edgeViews) {
     var d3nodes = [];
     var d3nodesMap = {};
     var nodeCount = 0;
-    model.nodes.forEach(function (n) {
+//console.log(model.nodes);
+    model.nodes.forEach(function (n, node) {
       d3nodes[nodeCount] = {'id': n};
       if (!isUndefined(model.nodeLabel)) {
         d3nodes[nodeCount].label = model.nodeLabel.image(n);
@@ -123,29 +124,55 @@ function GraphView(model, nodeViews, edgeViews) {
     }
     edge.exit().transition().style('opacity', 0).duration(1000).remove();
 */
-    model.edgeLabel.codom().forEach(function (label) {
-      var edge = edgeg.selectAll('.edge.label-'+label).data(this.force.force('link').links().filter(function (d) { return d.label == label; }));
+    if (isUndefined(model.edgeLabel)) {
+      var edge = edgeg.selectAll('.edge').data(this.force.force('link').links());
       edge.exit().transition().style('opacity', 0).duration(1000).remove();
       var edgeEnter = edge.enter()
         .append('g')
-          .attr('class', function (d) { return 'edge label-' + d.label; });
-      var draw = edgeViews[label] || labeledEdge;
+          .attr('class', function (d) { return 'edge'; });
+      var draw = labeledEdge;
       draw(model, edgeEnter);
-    }.bind(this));
+    }
+    else {
+      model.edgeLabel.codom().forEach(function (label) {
+        var edge = edgeg.selectAll('.edge.label-'+label).data(this.force.force('link').links().filter(function (d) { return d.label == label; }));
+        edge.exit().transition().style('opacity', 0).duration(1000).remove();
+        var edgeEnter = edge.enter()
+          .append('g')
+            .attr('class', function (d) { return 'edge label-' + d.label; });
+        var draw = edgeViews[label] || labeledEdge;
+        draw(model, edgeEnter);
+      }.bind(this));
+    }
 
-    model.nodeLabel.codom().forEach(function (label) {
-      var node = nodeg.selectAll('.node.label-'+label).data(this.force.nodes().filter(function (d) { return d.label == label; }));
+    if (isUndefined(model.nodeLabel)) {
+      var node = nodeg.selectAll('.node').data(this.force.nodes());
       node.exit().transition().style('opacity', 0).duration(1000).remove();
       var nodeEnter = node.enter()
         .append('g')
-          .attr('class', function (d) { return 'node label-' + d.label; })
+          .attr('class', function (d) { return 'node'; })
           .call(d3.drag()
             .on('start', dragstarted)
             .on('drag', dragged)
             .on('end', dragended));
-      var draw = nodeViews[label] || labeledNode;
+      var draw = labeledNode;
       draw(model, nodeEnter);
-    }.bind(this));
+    }
+    else {
+      model.nodeLabel.codom().forEach(function (label) {
+        var node = nodeg.selectAll('.node.label-'+label).data(this.force.nodes().filter(function (d) { return d.label == label; }));
+        node.exit().transition().style('opacity', 0).duration(1000).remove();
+        var nodeEnter = node.enter()
+          .append('g')
+            .attr('class', function (d) { return 'node label-' + d.label; })
+            .call(d3.drag()
+              .on('start', dragstarted)
+              .on('drag', dragged)
+              .on('end', dragended));
+        var draw = nodeViews[label] || labeledNode;
+        draw(model, nodeEnter);
+      }.bind(this));
+    }
 
     //labeledNode(model, nodeg, node.exit());
 /*

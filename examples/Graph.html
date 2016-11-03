@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Category of graphs</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script type="text/javascript" src="../d3js/d3.min.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../src/Helpers.js"></script>
+    <script type="text/javascript" src="../src/Category.js"></script>
+    <script type="text/javascript" src="../src/Diagram.js"></script>
+    <script type="text/javascript" src="../src/Set.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../src/Graph.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../src/ViewHelpers.js"></script>
+    <script type="text/javascript" src="../src/GraphView.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../src/GraphCategoryView.js" charset="utf-8"></script>
+<style type="text/css">
+.graph {
+  width: 450px;
+  height: 450px;
+  border: 1px solid gray;
+}
+.node {
+  cursor: move;
+}
+.node-circle {
+//  stroke: #ccc;
+//  stroke-width: 1px;
+}
+.node-label {
+  text-anchor: middle;
+  alignment-baseline: middle;
+  fill: white;
+  text-shadow: 0px 0px 0.2em black;
+//  stroke: white;
+//  stroke-width: 1px;
+//  text-shadow: 0px 1px black, 1px 0px black, 0px -1px black, -1px 0px black;
+}
+.node-label tspan {
+  font-size: smaller;
+  alignment-baseline: baseline;
+}
+.edge-path {
+  stroke: #000;
+  stroke-width: 3px;
+  fill: none;
+  opacity: 0.5;
+}
+.edge-label {
+  text-anchor: middle;
+  alignment-baseline: middle;
+  text-shadow: 0px 2px white, 2px 0px white, 0px -2px white, -2px 0px white;
+}
+.edge-label tspan {
+  font-size: smaller;
+  alignment-baseline: baseline;
+}
+</style>
+    <title></title>
+<script type="text/javascript">
+
+
+
+/*
+console.log('------------------------------');
+console.log('f = ' + f);
+console.log('g = ' + g);
+
+var po = cat.pushout(f, g);
+console.log('po = ' + po);
+
+var pc = cat.pushoutComplement(f, po.p);
+console.log('pc = ' + pc);
+*/
+
+
+
+/*
+var cat = new GraphCategory(nodeAlphabet, edgeAlphabet, elementKinds);
+
+var graphA = cat.object();
+var nodeCount = Math.round(Math.random() * 5);
+var edgeCount = Math.round(Math.random() * nodeCount * 1.5);
+graphA.randomInit(nodeCount, edgeCount, 'A');
+
+var graphB = cat.object();
+var nodeCount = Math.round(Math.random() * 10);
+var edgeCount = Math.round(Math.random() * nodeCount * 1.5);
+graphB.randomInit(nodeCount, edgeCount, 'B');
+graphB.supplement(graphA, 'B');
+
+var graphC = cat.object();
+var nodeCount = Math.round(Math.random() * 10);
+var edgeCount = Math.round(Math.random() * nodeCount * 1.5);
+graphC.randomInit(nodeCount, edgeCount, 'C');
+graphC.supplement(graphA, 'C');
+
+var f = cat.morphism(graphA, graphB);
+f.init();
+var g = cat.morphism(graphA, graphC);
+g.init();
+
+var pushout = cat.pushout(f, g);
+
+var p = cat.compose(f, pushout.arrow1);
+var q = cat.compose(g, pushout.arrow2);
+
+console.log(cat.commutes(p, q));
+*/
+window.onload = function() {
+
+var cat = new GraphCategory();
+
+var graphA = cat.object();
+graphA.nodes.addAll([1,2]);
+graphA.edges.addAll([1]);
+graphA.source.push(1, 1); graphA.target.push(1, 2);
+
+var graphB = cat.object();
+graphB.nodes.addAll([1,2,3,4]);
+graphB.edges.addAll([1,2,3,4,5]);
+graphB.source.push(1, 1); graphB.target.push(1, 2);
+graphB.source.push(2, 2); graphB.target.push(2, 4);
+graphB.source.push(3, 3); graphB.target.push(3, 4);
+graphB.source.push(4, 1); graphB.target.push(4, 3);
+graphB.source.push(5, 3); graphB.target.push(5, 1);
+
+var graphC = cat.object();
+graphC.nodes.addAll([1,2,5,6]);
+graphC.edges.addAll([1,2,3,4]);
+graphC.source.push(1, 6); graphC.target.push(1, 6);
+graphC.source.push(2, 5); graphC.target.push(2, 2);
+graphC.source.push(3, 1); graphC.target.push(3, 2);
+graphC.source.push(4, 5); graphC.target.push(4, 1);
+
+var f = cat.morphism(graphA, graphB);
+f.nodeMap.push(1, 1);
+f.nodeMap.push(2, 2);
+f.edgeMap.push(1, 1);
+f.check();
+
+var g = cat.morphism(graphA, graphC);
+g.nodeMap.push(1, 1);
+g.nodeMap.push(2, 2);
+g.edgeMap.push(1, 3);
+
+showGraphCategoryView('diagram1', cat, {'A': graphA, 'B': graphB, 'C': graphC},
+  {'f': {dom: 'A', codom: 'B', morphism: f},
+   'g': {dom: 'A', codom: 'C', morphism: g}});
+
+var po1 = cat.pushout(f, g);
+
+//var p = cat.compose(f, pushout.arrow1);
+//var q = cat.compose(g, pushout.arrow2);
+
+console.log(po1.D());
+showGraphCategoryView('diagram2', cat, {'A': graphA, 'B': graphB, 'C': graphC, 'D': po1.D()},
+  {'f': {dom: 'A', codom: 'B', morphism: f},
+   'g': {dom: 'A', codom: 'C', morphism: g},
+   'p': {dom: 'B', codom: 'D', morphism: po1.p},
+   'q': {dom: 'C', codom: 'D', morphism: po1.q}});
+
+
+  var graphViewA = new GraphView(graphA);
+  graphViewA.bind(d3.select('#graphA'));
+  graphViewA.start();
+
+  // var graphViewB = new GraphView(graphB);
+  // graphViewB.bind(d3.select('#graphB'));
+  // graphViewB.start();
+  var graphViewB = new GraphView(graphB);
+  graphViewB.bind(d3.select('#graphB'));
+  graphViewB.start();
+
+  var graphViewC = new GraphView(pc.C());
+  graphViewC.bind(d3.select('#graphC'));
+  graphViewC.start();
+
+  var graphViewD = new GraphView(po.D());
+  graphViewD.bind(d3.select('#graphD'));
+  graphViewD.start();
+
+  var morphisms = d3.select('#morphisms');
+  morphisms.append('dt').html('A');
+  morphisms.append('dd').html(graphA);
+  morphisms.append('dt').html('B');
+  morphisms.append('dd').html(graphB);
+  morphisms.append('dt').html('C');
+  morphisms.append('dd').html(graphC);
+  morphisms.append('dt').html('f: A &rarr; B');
+  morphisms.append('dd').html(f.toString());
+  morphisms.append('dt').html('g: A &rarr; C');
+  morphisms.append('dd').html(g.toString());
+  morphisms.append('dt').html('p: B &rarr; D');
+  morphisms.append('dd').html(po.p.toString());
+  morphisms.append('dt').html('q: C &rarr; D');
+  morphisms.append('dd').html(po.q.toString());
+
+//  morphisms.append('dt').html('m: B &rarr; D');
+//  morphisms.append('dd').html(pushout.arrow1.toString());
+//  morphisms.append('dt').html('n: C &rarr; D');
+//  morphisms.append('dd').html(pushout.arrow2.toString());
+//  morphisms.append('dt').html('q: A &rarr; D = g; n');
+//  morphisms.append('dd').html(q.toString());
+
+//  setInterval(function() { gr.nodes.push({'label': 'A'}); gr.start(); }, 700);
+//  setInterval(function() { gr.edges.pop(); gr.nodes.pop(); gr.start(); }, 1000);
+};
+
+</script>
+  </head>
+  <body>
+    <h1>Category of graphs</h1>
+
+    <h2>Sample objects and morphisms</h2>
+    <p>Double click on object to show or hide its internal structure.</p>
+    <p>To fix the node position, drag it with the Ctrl key pressed.</p>
+    <svg class="diagram" id="diagram1" style="width: 500px; height: 500px;" />
+    <p></p>
+    <svg class="diagram" id="diagram2" style="width: 500px; height: 500px;" />
+    <p></p>
+
+    <svg class="graph" id="graphA" />
+    <svg class="graph" id="graphB" />
+    <svg class="graph" id="graphC" />
+    <svg class="graph" id="graphD" />
+    <dl id="morphisms"></dl>
+  </body>
+</html>
