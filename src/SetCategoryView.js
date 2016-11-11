@@ -79,7 +79,7 @@ function SetCategoryView(model) {
           adjMatrix[t] = {};
         }
         adjMatrix[s][t] = (adjMatrix[s][t] + 1) || 1;
-        dst.morphism.forEach(function (a, b) {
+        dst.target.forEach(function (a, b) {
           var s2 = dst.dom+'['+a+']';
           var t2 = dst.codom+'['+b+']';
           if (!adjMatrix[s2]) {
@@ -107,7 +107,7 @@ function SetCategoryView(model) {
         // Add the morphism
         data.links.push({ name : name, label : name, source : s, target : t, morphism : true, value : 1, ordinal : calcOrdinal(adjMatrix, ordMatrix, s, t) });
         // Add empty functions if needed
-        if (dst.morphism.dom().isEmpty() || dst.morphism.codom().isEmpty()) {
+        if (dst.target.dom().isEmpty() || dst.target.codom().isEmpty()) {
           var sl = '_l_'+s;
           var tl = '_l_'+t;
           data.links.push({ name : name, label : name, source : sl, target : tl, empty : true, value : 1, ordinal : calcOrdinal(adjMatrix, ordMatrix, s, t) });
@@ -115,7 +115,7 @@ function SetCategoryView(model) {
           data.links.push({ name : name, label : name, source : sl, target : t,  empty : true, value : 1, ordinal : calcOrdinal(adjMatrix, ordMatrix, s, t) });
         }
         // Add elements of the function graph
-        dst.morphism.forEach(function (a, b) {
+        dst.target.forEach(function (a, b) {
           var se = dst.dom+'['+a+']';
           var te = dst.codom+'['+b+']';
           data.links.push({ name : name, label : name, source : se, target : te, value : 1, ordinal : calcOrdinal(adjMatrix, ordMatrix, se, te) });
@@ -473,16 +473,16 @@ function convexHulls(nodes, index, offset) {
 }
 
 function showSetCategoryView(viewId, category, objects, morphisms) {
-  var diagram = new Diagram(null, category);
+  var diagram = new Diagram(category);
   for (var name in objects) {
     if (has(objects, name)) {
-      diagram.addObjectMap(name, objects[name]);
+      diagram.mapObject(name, objects[name]);
     }
   }
   for (var name in morphisms) {
     if (has(morphisms, name)) {
       var morphism = morphisms[name];
-      diagram.addMorphismMap(name, morphism.dom, morphism.codom, morphism.morphism);
+      diagram.mapMorphism({name: name, dom: morphism.dom, codom: morphism.codom}, morphism.morphism);
     }
   }
   var view = new SetCategoryView(diagram);

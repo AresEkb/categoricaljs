@@ -6,6 +6,11 @@ function assert(condition, message) {
   }
 }
 
+function assertEqualObjects(A, B) {
+  assert(A.equals(B),
+    'The following objects must be equal:\n' + A + ' and\n' + B);
+}
+
 function assertEqualDom(f, g) {
   assert(f.dom().equals(g.dom()),
     'The following morphisms must have the same domain:\n' + f + ' and\n' + g);
@@ -94,7 +99,32 @@ function combine(MixinCombination, Mixins) {
   }
   MixinCombination.prototype._mixins = mixinList;
 }
+/*
+function base(self, args) {
+  self.constructor.base.constructor.apply(self,
+    Array.prototype.slice.call(arguments, 1));
+}
 
+function A() {
+  console.log('A');
+}
+
+function B() {
+  //base(this);
+  B.base.constructor.apply(this);
+  console.log('B');
+}
+extend(B, A);
+
+function C() {
+  //base(this);
+  C.base.constructor.apply(this);
+  console.log('C');
+}
+extend(C, B);
+
+var c = new C();
+*/
 var getObjectID = (function () {
   var id = 0;
   return function (obj) {

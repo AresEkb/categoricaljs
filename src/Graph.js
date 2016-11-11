@@ -11,16 +11,50 @@ function GraphCategory() {
 
 extend(GraphCategory, Category, BicompleteCategory);
 
-GraphCategory.prototype.object = function() {
-  return new Graph();
+/*
+// TODO: What is the purpose of this function?
+// Maybe it must pass all arguments to Graph constructor
+// Or maybe one must create objects directly?
+// What we really need is to check whether object has the right type or not.
+// But from the another point of view the function guarantees
+// that the object will has the right type.
+// In Computational Category Theory book Category has 4 functions: domain, codomain, id, compose
+GraphCategory.prototype.object = function (nodes, edges, source, target) {
+  //return new (Function.prototype.bind.apply(Graph, arguments));
+  //return Graph.apply(null, arguments);
+  return new Graph(nodes, edges, source, target);
 };
 
-GraphCategory.prototype.morphism = function(objA, objB) {
-  return new GraphMorphism(objA, objB);
+// TODO: The same as for object function.
+// I think this function must not create a new morphism.
+// Instead we need to check whether morphism has the right type or not.
+GraphCategory.prototype.morphism = function (A, B, nodeMap, edgeMap) {
+  return new GraphMorphism(A, B, nodeMap, edgeMap);
 };
+*/
 
 GraphCategory.prototype.compose = function (g, f) {
   return g.compose(f);
+};
+
+GraphCategory.prototype.hasObject = function(A) {
+  return A instanceof Graph;
+};
+
+GraphCategory.prototype.hasMorphism = function(f) {
+  return f instanceof GraphMorphism;
+};
+
+GraphCategory.prototype.areComposable = function(g, f) {
+  return g.dom().equals(f.dom());
+};
+
+GraphCategory.prototype.terminal = function () {
+  return new GraphTerminalObject(this).calculate();
+};
+
+GraphCategory.prototype.initial = function () {
+  return new GraphInitialObject(this).calculate();
 };
 
 GraphCategory.prototype.pushout = function(f, g) {
@@ -34,18 +68,29 @@ GraphCategory.prototype.pushoutComplement = function(f, p) {
 ///////////////////////////////////////////////////////////////////////////////
 // Graph
 
-//function Graph(nodeAlphabet, edgeAlphabet, elementKinds) {
-function Graph() {
+// nodes and edges: [1,2,3,...]
+// source: {1:1, 2:2, ...}
+//         [[1,1],[2,2],...]
+//         {1:[1,2], 2:[2,3], ...}
+//         [[1,[1,2]], [2,[2,3]], ...]
+//         [[1,1,2], [2,2,3], ...]
+function Graph(nodes, edges) {
   var setCat = new SetCategory();
-
+//console.log(nodes, edges, source, target);
   // this.nodeAlphabet = typeof nodeAlphabet != 'undefined' ? nodeAlphabet : 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   // this.edgeAlphabet = typeof edgeAlphabet != 'undefined' ? edgeAlphabet : 'abcdefghijklmnopqrstuvwxyz';
   // this.elementKinds = elementKinds;
 
-  this.nodes = setCat.object();
-  this.edges = setCat.object();
-  this.source = setCat.morphism(this.edges, this.nodes);
-  this.target = setCat.morphism(this.edges, this.nodes);
+  this.nodes  = new Set(nodes);
+  this.edges  = new Set();
+  this.source = new TotalFunction(this.edges, this.nodes);
+  this.target = new TotalFunction(this.edges, this.nodes);
+
+  edges.forEach(function (edge) {
+    this.edges.add(edge[0]);
+    this.source.push(edge[0], edge[1]);
+    this.target.push(edge[0], edge[2]);
+  }, this);
 
   this.equals = function (graph) {
     return this.nodes.equals(graph.nodes) && this.edges.equals(graph.edges) &&
@@ -112,88 +157,131 @@ Graph.prototype.toString = function () {
 ///////////////////////////////////////////////////////////////////////////////
 // GraphMorphism
 
-function GraphMorphism(graphA, graphB) {
-  var setCat = new SetCategory();
+// TODO: If one will change (co)domain of the morphism, then it's not
+// guaranteed that mappings are not broken.
+// We need either make (co)dom read-only or re-check mappings when
+// (co)dom is changed.
+function GraphMorphism(graphA, graphB, nodeMap, edgeMap) {
+  GraphMorphism.base.constructor.call(this, graphA, graphB);
+  //base(this, graphA, graphB);
 
-  this.source = graphA;
-  this.target = graphB;
-  this.nodeMap = setCat.morphism(this.source.nodes, this.target.nodes);
-  this.edgeMap = setCat.morphism(this.source.edges, this.target.edges);
+  this._nodeMap = new TotalFunction(this.dom().nodes, this.codom().nodes);
+  this._edgeMap = new TotalFunction(this.dom().edges, this.codom().edges);
 
-  this.dom = function () { return graphA; };
-  
-  this.codom = function () { return graphB; };
+  nodeMap.forEach(function (map) { this._nodeMap.push(map[0], map[1]); }, this);
+  edgeMap.forEach(function (map) { this._edgeMap.push(map[0], map[1]); }, this);
 
-  // console.log('graphA = ' + graphA);
-  // console.log('graphB = ' + graphB);
-  this.init = function () {
-    var tNodes = graphB.nodes.elements();
-    graphA.nodes.forEach(function (s) {
-      var t = tNodes[Math.round(Math.random() * tNodes.length)];
-      if (isUndefined(t)) {
-        t = graphB.nodes.addNext();
-      }
-      this.nodeMap.push(s, t);
-    }.bind(this));
-    graphA.edges.forEach(function (s) {
-      var sn = this.nodeMap.image(graphA.source.image(s));
-      var tn = this.nodeMap.image(graphA.target.image(s));
-      var t = graphB.edges.random(function (e) {
-        return graphB.source.image(e) === sn && graphB.target.image(e) === tn;
-      });
-      if (isUndefined(t)) {
-        t = graphB.edges.addNext();
-        graphB.source.push(t, sn);
-        graphB.target.push(t, tn);
-      }
-      this.edgeMap.push(s, t);
-    }.bind(this));
-    // console.log('graphA\' = ' + graphA);
-    // console.log('graphB\' = ' + graphB);
-    // console.log('graphA\'.source = ' + graphA.source);
-    // console.log('graphA\'.target = ' + graphA.target);
-    // console.log('graphB\'.source = ' + graphB.source);
-    // console.log('graphB\'.target = ' + graphB.target);
-    // console.log('this.edgeMap = ' + this.edgeMap);
-    // console.log('this.nodeMap = ' + this.nodeMap);
-    // console.log('p = ' + graphA.source.compose(this.nodeMap));
-    // console.log('q = ' + this.edgeMap.compose(graphB.source));
-    assert(graphA.source.isTotal());
-    assert(graphA.target.isTotal());
-    assert(graphB.source.isTotal());
-    assert(graphB.target.isTotal());
-    assert(this.edgeMap.isTotal());
-    assert(this.nodeMap.isTotal());
-    return this;
-  };
-
-  this.isTotal = function () {
-    return this.nodeMap.isTotal() && this.edgeMap.isTotal();
-  };
-
-  this.isMono = function () {
-    return this.nodeMap.isMono() && this.edgeMap.isMono();
-  };
-
+  this.check();
 }
 
-GraphMorphism.prototype.toString = function () {
-    // function sub(text) {
-    //   return '<sub>' + text + '</sub>';
-    // }
-    // function mapToString(m) {
-    //   return '(' + m.source.label + sub(m.source.id) + ',' + m.target.label + sub(m.target.id) + ')';
-    // };
-    // return '&lt;nodeMap: {' + this.nodeMap.map(mapToString).join() + '}, edgeMap: {' + this.edgeMap.map(mapToString).join() + '}&gt;';
-  return '&lt;nodeMap: ' + this.nodeMap + ', edgeMap: ' + this.edgeMap + '&gt;';
+extend(GraphMorphism, Morphism);
+
+// TODO: It must be called after any changes
+GraphMorphism.prototype.check = function () {
+  assertCommutes(this._nodeMap.compose(this.dom().source), this.codom().source.compose(this._edgeMap));
+  assertCommutes(this._nodeMap.compose(this.dom().target), this.codom().target.compose(this._edgeMap));
 };
 
-GraphMorphism.prototype.check = function () {
-  // console.log('>>> check GraphMorphism');
-  //assert(this.dom().source.compose(this.nodeMap).commutes(this.edgeMap.compose(this.codom().source)));
-  assertCommutes(this.nodeMap.compose(this.dom().source), this.codom().source.compose(this.edgeMap));
-  assertCommutes(this.nodeMap.compose(this.dom().target), this.codom().target.compose(this.edgeMap));
+GraphMorphism.prototype.mapNode = function (source, target) {
+  if (!isUndefined(target)) {
+    this._nodeMap.push(source, target);
+    return target;
+  }
+  return this._nodeMap.image(source);
+}
+
+GraphMorphism.prototype.mapEdge = function (source, target) {
+  if (!isUndefined(target)) {
+    this._edgeMap.push(source, target);
+    return target;
+  }
+  return this._edgeMap.image(source);
+}
+
+GraphMorphism.prototype.init = function () {
+  var tNodes = graphB.nodes.elements();
+  graphA.nodes.forEach(function (s) {
+    var t = tNodes[Math.round(Math.random() * tNodes.length)];
+    if (isUndefined(t)) {
+      t = graphB.nodes.addNext();
+    }
+    this._nodeMap.push(s, t);
+  }.bind(this));
+  graphA.edges.forEach(function (s) {
+    var sn = this._nodeMap.image(graphA.source.image(s));
+    var tn = this._nodeMap.image(graphA.target.image(s));
+    var t = graphB.edges.random(function (e) {
+      return graphB.source.image(e) === sn && graphB.target.image(e) === tn;
+    });
+    if (isUndefined(t)) {
+      t = graphB.edges.addNext();
+      graphB.source.push(t, sn);
+      graphB.target.push(t, tn);
+    }
+    this._edgeMap.push(s, t);
+  }.bind(this));
+  assert(graphA.source.isTotal());
+  assert(graphA.target.isTotal());
+  assert(graphB.source.isTotal());
+  assert(graphB.target.isTotal());
+  assert(this._edgeMap.isTotal());
+  assert(this._nodeMap.isTotal());
+  return this;
 };
+
+GraphMorphism.prototype.isTotal = function () {
+  return this._nodeMap.isTotal() && this._edgeMap.isTotal();
+};
+
+GraphMorphism.prototype.isMono = function () {
+  return this._nodeMap.isMono() && this._edgeMap.isMono();
+};
+
+GraphMorphism.prototype.toString = function () {
+  return '&lt;nodeMap: ' + this._nodeMap + ', edgeMap: ' + this._edgeMap + '&gt;';
+};
+
+/////////////////////////////////////////////////////////////////////////////
+// GraphTerminalObject
+
+function GraphTerminalObject(cat) {
+  this.cat = function () { return cat; };
+}
+
+GraphTerminalObject.prototype.calculate = function () {
+  this.obj = new Graph([1]);
+  this.obj.nodes.addAll([1]);
+  this.obj.edges.addAll([1]);
+  this.obj.source.push(1, 1); this.obj.target.push(1, 1);
+  return this;
+}
+
+GraphTerminalObject.prototype.univ = function (A) {
+  var u = this.cat().morphism(A, this.obj);
+  A.nodes.forEach(function (el) {
+    u.nodeMap.push(ul, 1);
+  });
+  A.edges.forEach(function (el) {
+    u.edgeMap.push(el, 1);
+  });
+  return u;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// GraphInitialObject
+
+function GraphInitialObject(cat) {
+  this.cat = function () { return cat; };
+}
+
+GraphInitialObject.prototype.calculate = function () {
+  this.obj = new Graph();
+  return this;
+}
+
+GraphInitialObject.prototype.univ = function (A) {
+  return this.cat().morphism(this.obj, A);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // GraphPushout

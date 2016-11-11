@@ -7,12 +7,14 @@
     <script type="text/javascript" src="../d3js/d3.min.js" charset="utf-8"></script>
     <script type="text/javascript" src="../src/Helpers.js"></script>
     <script type="text/javascript" src="../src/Category.js"></script>
-    <script type="text/javascript" src="../src/Diagram.js"></script>
+    <script type="text/javascript" src="../src/Functor.js"></script>
     <script type="text/javascript" src="../src/Set.js" charset="utf-8"></script>
     <script type="text/javascript" src="../src/Graph.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../src/Graph3.js" charset="utf-8"></script>
     <script type="text/javascript" src="../src/ViewHelpers.js"></script>
     <script type="text/javascript" src="../src/GraphView.js" charset="utf-8"></script>
     <script type="text/javascript" src="../src/GraphCategoryView.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../src/SetCategoryView.js"></script>
 <style type="text/css">
 .graph {
   width: 450px;
@@ -109,56 +111,72 @@ console.log(cat.commutes(p, q));
 window.onload = function() {
 
 var cat = new GraphCategory();
+var setCat = new SetCategory();
 
-var graphA = cat.object();
-graphA.nodes.addAll([1,2]);
-graphA.edges.addAll([1]);
-graphA.source.push(1, 1); graphA.target.push(1, 2);
+var set123 = setCat.object([1,2,3]);
+var setAB = setCat.object(['a','b']);
+/*
+var graphT = cat.object();
+graphT.nodes.addAll([1]);
+graphT.edges.addAll([1]);
+graphT.source.push(1, 1); graphT.target.push(1, 1);
 
-var graphB = cat.object();
-graphB.nodes.addAll([1,2,3,4]);
-graphB.edges.addAll([1,2,3,4,5]);
-graphB.source.push(1, 1); graphB.target.push(1, 2);
-graphB.source.push(2, 2); graphB.target.push(2, 4);
-graphB.source.push(3, 3); graphB.target.push(3, 4);
-graphB.source.push(4, 1); graphB.target.push(4, 3);
-graphB.source.push(5, 3); graphB.target.push(5, 1);
+var graphI = cat.object();
+//graphI.nodes.addAll([1]);
+//graphI.edges.addAll([1]);
+//graphI.source.push(1, 1); graphB.target.push(1, 1);
+*/
 
-var graphC = cat.object();
-graphC.nodes.addAll([1,2,5,6]);
-graphC.edges.addAll([1,2,3,4]);
-graphC.source.push(1, 6); graphC.target.push(1, 6);
-graphC.source.push(2, 5); graphC.target.push(2, 2);
-graphC.source.push(3, 1); graphC.target.push(3, 2);
-graphC.source.push(4, 5); graphC.target.push(4, 1);
+var graphT = new Graph([1], [[1,1,1]]);
+var graphI = new Graph([], []);
 
-var f = cat.morphism(graphA, graphB);
-f.nodeMap.push(1, 1);
-f.nodeMap.push(2, 2);
-f.edgeMap.push(1, 1);
-f.check();
+var graphA = new Graph([1,2], [[1,1,2]]);
+//var graphB = cat.object([1,2,3,4], [1,2,3,4,5], {1:1, 2:2, 3:3, 4:1, 5:3}, {1:2, 2:4, 3:4, 4:3, 5:1});
+//var graphB = cat.object([1,2,3,4], [1,2,3,4,5], {1:[1,2], 2:[2,4], 3:[3,4], 4:[1,3], 5:[3,1]});
+var graphB = new Graph([1,2,3,4], [[1,1,2],[2,2,4],[3,3,4],[4,1,3],[5,3,1]]);
+//var graphC = cat.object([1,2,5,6], [1,2,3,4], {1:6,2:5,3:1,4:5}, {1:6,2:2,3:2,4:1});
+var graphC = new Graph([1,2,5,6], [[1,6,6],[2,5,2],[3,1,2],[4,5,1]]);
+var f = new GraphMorphism(graphA, graphB, [[1,1],[2,2]], [[1,1]]);
+var g = new GraphMorphism(graphA, graphC, [[1,1],[2,2]], [[1,3]]);
 
-var g = cat.morphism(graphA, graphC);
-g.nodeMap.push(1, 1);
-g.nodeMap.push(2, 2);
-g.edgeMap.push(1, 3);
+var s02 = setCat.morphism(setAB, set123, {'a':1,'b':2});
+var t02 = setCat.morphism(setAB, set123, {'a':2,'b':3});
+var s03 = setCat.morphism(setAB, set123, {'a':1,'b':3});
+var t03 = setCat.morphism(setAB, set123, {'a':2,'b':2});
+var fn02 = setCat.morphism(set123, set123, {1:1,2:2,3:3});
+var fe02 = setCat.morphism(setAB, setAB, {'a':'a','b':'b'});
 
-showGraphCategoryView('diagram1', cat, {'A': graphA, 'B': graphB, 'C': graphC},
+showSetCategoryView('diagram02', setCat, {'E1': setAB, 'N1': set123, 'E2': setAB, 'N2': set123},
+  {'s1': {dom: 'E1', codom: 'N1', morphism: s02},
+   't1': {dom: 'E1', codom: 'N1', morphism: t02},
+   's2': {dom: 'E2', codom: 'N2', morphism: s03},
+   't2': {dom: 'E2', codom: 'N2', morphism: t03},
+   'fn': {dom: 'N1', codom: 'N2', morphism: fn02},
+   'fe': {dom: 'E1', codom: 'E2', morphism: fe02}});
+
+
+//var graph123 = cat.object([1,2,3], ['a','b'], {'a':1,'b':2}, {'a':2,'b':3});
+//var graph132 = cat.object([1,2,3], ['a','b'], {'a':1,'b':3}, {'a':2,'b':2});
+//var f2 = cat.morphism(graph123, graph132, {1:1,2:3,3:2}, {'a':'a','b':'b'});
+//f2.check();
+
+showGraphCategoryView('diagram01', cat, {'A': graphA, 'B': graphB, 'C': graphC},
   {'f': {dom: 'A', codom: 'B', morphism: f},
    'g': {dom: 'A', codom: 'C', morphism: g}});
 
+/*
 var po1 = cat.pushout(f, g);
 
 //var p = cat.compose(f, pushout.arrow1);
 //var q = cat.compose(g, pushout.arrow2);
 
 console.log(po1.D());
-showGraphCategoryView('diagram2', cat, {'A': graphA, 'B': graphB, 'C': graphC, 'D': po1.D()},
+showGraphCategoryView('diagram22', cat, {'A': graphA, 'B': graphB, 'C': graphC, 'D': po1.D()},
   {'f': {dom: 'A', codom: 'B', morphism: f},
    'g': {dom: 'A', codom: 'C', morphism: g},
    'p': {dom: 'B', codom: 'D', morphism: po1.p},
    'q': {dom: 'C', codom: 'D', morphism: po1.q}});
-
+*/
 
   var graphViewA = new GraphView(graphA);
   graphViewA.bind(d3.select('#graphA'));
@@ -170,7 +188,7 @@ showGraphCategoryView('diagram2', cat, {'A': graphA, 'B': graphB, 'C': graphC, '
   var graphViewB = new GraphView(graphB);
   graphViewB.bind(d3.select('#graphB'));
   graphViewB.start();
-
+/*
   var graphViewC = new GraphView(pc.C());
   graphViewC.bind(d3.select('#graphC'));
   graphViewC.start();
@@ -194,6 +212,7 @@ showGraphCategoryView('diagram2', cat, {'A': graphA, 'B': graphB, 'C': graphC, '
   morphisms.append('dd').html(po.p.toString());
   morphisms.append('dt').html('q: C &rarr; D');
   morphisms.append('dd').html(po.q.toString());
+*/
 
 //  morphisms.append('dt').html('m: B &rarr; D');
 //  morphisms.append('dd').html(pushout.arrow1.toString());
@@ -214,9 +233,14 @@ showGraphCategoryView('diagram2', cat, {'A': graphA, 'B': graphB, 'C': graphC, '
     <h2>Sample objects and morphisms</h2>
     <p>Double click on object to show or hide its internal structure.</p>
     <p>To fix the node position, drag it with the Ctrl key pressed.</p>
-    <svg class="diagram" id="diagram1" style="width: 500px; height: 500px;" />
+    <svg class="diagram" id="diagram01" style="width: 500px; height: 500px;" />
+
+
+    <h2>Terminal, initial and null object</h2>
     <p></p>
-    <svg class="diagram" id="diagram2" style="width: 500px; height: 500px;" />
+    <svg class="diagram" id="diagram02" style="width: 500px; height: 500px;" />
+    <p></p>
+    <svg class="diagram" id="diagram22" style="width: 500px; height: 500px;" />
     <p></p>
 
     <svg class="graph" id="graphA" />

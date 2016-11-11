@@ -48,7 +48,9 @@ function GraphCategoryView(model) {
         var obj = objectMap[name];
         var groupId = groups.push(name) - 1;
         // Add the object
-        var objNode = { name : name, label : name, group : groupId, object : true, size: obj.size()+1, nodes: [] };
+//console.log(obj);
+        //var objNode = { name : name, label : name, group : groupId, object : true, size: obj.size()+1, nodes: [] };
+        var objNode = { name : name, label : name, group : groupId, object : true, size: 1, nodes: [] };
         data.nodes.push(objNode);
         // Add the object label
         data.nodes.push({ name : '_l_'+name, label : name, group : groupId, group_data : objNode, isLabel : true });
@@ -92,7 +94,8 @@ function GraphCategoryView(model) {
           adjMatrix[t] = {};
         }
         adjMatrix[s][t] = (adjMatrix[s][t] + 1) || 1;
-        dst.morphism.nodeMap.forEach(function (a, b) {
+        dst.target.dom().nodes.forEach(function (a) {
+          var b = dst.target.mapNode(a);
           var s2 = dst.dom+'['+a+']';
           var t2 = dst.codom+'['+b+']';
           if (!adjMatrix[s2]) {
@@ -120,7 +123,7 @@ function GraphCategoryView(model) {
         // Add the morphism
         data.links.push({ name : name, label : name, source : s, target : t, morphism : true, value : 1, ordinal : calcOrdinal(adjMatrix, ordMatrix, s, t) });
         // Add empty functions if needed
-        if (dst.morphism.nodeMap.dom().isEmpty() || dst.morphism.nodeMap.codom().isEmpty()) {
+        if (dst.target.dom().nodes.isEmpty() || dst.target.codom().nodes.isEmpty()) {
           var sl = '_l_'+s;
           var tl = '_l_'+t;
           data.links.push({ name : name, label : name, source : sl, target : tl, empty : true, value : 1, ordinal : calcOrdinal(adjMatrix, ordMatrix, s, t) });
@@ -128,7 +131,8 @@ function GraphCategoryView(model) {
           data.links.push({ name : name, label : name, source : sl, target : t,  empty : true, value : 1, ordinal : calcOrdinal(adjMatrix, ordMatrix, s, t) });
         }
         // Add elements of the function graph
-        dst.morphism.nodeMap.forEach(function (a, b) {
+        dst.target.dom().nodes.forEach(function (a) {
+          var b = dst.target.mapNode(a);
           var se = dst.dom+'['+a+']';
           var te = dst.codom+'['+b+']';
           data.links.push({ name : name, label : name, source : se, target : te, value : 1, ordinal : calcOrdinal(adjMatrix, ordMatrix, se, te) });
@@ -512,7 +516,7 @@ function convexHulls(nodes, index, offset) {
 
   return hullset;
 }
-
+/*
 function showGraphCategoryView(viewId, category, objects, morphisms) {
   var diagram = new Diagram(null, category);
   for (var name in objects) {
@@ -524,6 +528,24 @@ function showGraphCategoryView(viewId, category, objects, morphisms) {
     if (has(morphisms, name)) {
       var morphism = morphisms[name];
       diagram.addMorphismMap(name, morphism.dom, morphism.codom, morphism.morphism);
+    }
+  }
+  var view = new GraphCategoryView(diagram);
+  view.bind(d3.select('#' + viewId));
+  view.start();
+}
+*/
+function showGraphCategoryView(viewId, category, objects, morphisms) {
+  var diagram = new Diagram(category);
+  for (var name in objects) {
+    if (has(objects, name)) {
+      diagram.mapObject(name, objects[name]);
+    }
+  }
+  for (var name in morphisms) {
+    if (has(morphisms, name)) {
+      var morphism = morphisms[name];
+      diagram.mapMorphism({name: name, dom: morphism.dom, codom: morphism.codom}, morphism.morphism);
     }
   }
   var view = new GraphCategoryView(diagram);
