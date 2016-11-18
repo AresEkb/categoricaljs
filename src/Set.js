@@ -32,7 +32,11 @@ SetCategory.prototype.hasObject = function (A) {
 };
 
 SetCategory.prototype.hasMorphism = function (f) {
-  return f instanceof TotalFunction;
+  return f instanceof TotalFunction && f.isTotal();
+};
+
+Category.prototype.equals = function (cat) {
+  return this.constructor === cat.constructor;
 };
 
 SetCategory.prototype.terminal = function () {
@@ -496,18 +500,22 @@ TotalFunction.prototype.toString = function () {
 function SetTerminalObject(cat) {
   var diagram = new Diagram(cat);
   var apex = new Set([1]);
-  var components = new Map();
-  SetTerminalObject.base.constructor.call(this, diagram, apex, components);
+  var component = new Map();
+  SetTerminalObject.base.constructor.call(this, diagram, apex, component);
 }
 
 extend(SetTerminalObject, LimitingCone);
 
 SetTerminalObject.prototype.univ = function (A) {
+  var apex = A;
+  var component = new Map();
+  var cone = new LimitingCone(this.diagram(), apex, component);
+
   var mapping = {};
-  A.forEach(function (el) {
-    mapping[el] = 1;
-  });
-  return this.cat().morphism(A, this.apex(), mapping);
+  A.forEach(function (el) { mapping[el] = 1; });
+  var u = new TotalFunction(apex, this.apex(), mapping);
+
+  return new ConeMorphism(cone, this, u);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -516,23 +524,26 @@ SetTerminalObject.prototype.univ = function (A) {
 function SetInitialObject(cat) {
   var diagram = new Diagram(cat);
   var apex = new Set();
-  var components = new Map();
-  SetInitialObject.base.constructor.call(this, diagram, apex, components);
+  var component = new Map();
+  SetInitialObject.base.constructor.call(this, diagram, apex, component);
 }
 
 extend(SetInitialObject, ColimitingCocone);
 
 SetInitialObject.prototype.univ = function (A) {
-  return this.cat().morphism(this.apex(), A, {});
+  var apex = A;
+  var component = new Map();
+  var cone = new ColimitingCocone(this.diagram(), apex, component);
+
+  var u = new TotalFunction(this.apex(), apex, {});
+
+  return new CoconeMorphism(this, cone, u);
 }
 
 /////////////////////////////////////////////////////////////////////////////
 // SetProduct
 
 function SetProduct(cat, A, B) {
-  assert(cat.hasObject(A));
-  assert(cat.hasObject(B));
-
   var diagram = new Diagram(cat, [['A',A],['B',B]]);
 
   var apex = new Set();
@@ -547,39 +558,37 @@ function SetProduct(cat, A, B) {
     });
   });
 
-  var sides = new Map();
-  sides.set('A', cat.morphism(apex, A, mapping1));
-  sides.set('B', cat.morphism(apex, B, mapping2));
+  var component = new Map();
+  component.set('A', new TotalFunction(apex, A, mapping1));
+  component.set('B', new TotalFunction(apex, B, mapping2));
 
-  SetProduct.base.constructor.call(this, diagram, apex, sides);
+  SetProduct.base.constructor.call(this, diagram, apex, component);
 }
 
 extend(SetProduct, LimitingCone);
 
 SetProduct.prototype.univ = function (m, n) {
-  assertEqualDom(m, n);
-  var obj = m.dom();
+  var apex = m.dom();
+  var component = new Map([['A',m],['B',n]]);
+  var cone = new LimitingCone(this.diagram(), apex, component);
+
   var f = this.component('A');
   var g = this.component('B');
   var mapping = {};
-  obj.forEach(function (x) {
+  apex.forEach(function (x) {
     var s1 = f.preimage(m.image(x));
     var s2 = g.preimage(n.image(x));
     mapping[x] = s1.intersection(s2).representative();
-  }.bind(this));
-  var u = this.cat().morphism(obj, this.apex(), mapping);
-  assertCommutes(f.compose(u), m);
-  assertCommutes(g.compose(u), n);
-  return u;
+  });
+  var u = new TotalFunction(apex, this.apex(), mapping);
+
+  return new ConeMorphism(cone, this, u);
 };
 
 /////////////////////////////////////////////////////////////////////////////
 // SetCoproduct
 
 function SetCoproduct(cat, A, B) {
-  assertHasObject(cat, A);
-  assertHasObject(cat, B);
-
   var diagram = new Diagram(cat, [['A',A],['B',B]]);
 
   var apex = new Set();
@@ -594,22 +603,22 @@ function SetCoproduct(cat, A, B) {
     return mapping;
   }
 
-  var sides = new Map();
-  sides.set('A', cat.morphism(A, apex, createInjection(A, apex)));
-  sides.set('B', cat.morphism(B, apex, createInjection(B, apex)));
+  var component = new Map();
+  component.set('A', new TotalFunction(A, apex, createInjection(A, apex)));
+  component.set('B', new TotalFunction(B, apex, createInjection(B, apex)));
 
-  SetCoproduct.base.constructor.call(this, diagram, apex, sides);
+  SetCoproduct.base.constructor.call(this, diagram, apex, component);
 }
 
 extend(SetCoproduct, ColimitingCocone);
 
 SetCoproduct.prototype.univ = function (m, n) {
-  assertEqualCodom(m, n);
+  var apex = m.codom();
+  var component = new Map([['A',m],['B',n]]);
+  var cone = new ColimitingCocone(this.diagram(), apex, component);
+
   var f = this.component('A');
   var g = this.component('B');
-  assertEqualDom(f, m);
-  assertEqualDom(g, n);
-  var obj = m.codom();
   var mapping = {};
   function addMappings(f2, h) {
     h.dom().forEach(function (x) {
@@ -618,10 +627,11 @@ SetCoproduct.prototype.univ = function (m, n) {
   }
   addMappings(f, m);
   addMappings(g, n);
-  var u = this.cat().morphism(this.apex(), obj, mapping);
+  var u = new TotalFunction(this.apex(), apex, mapping);
   assertCommutes(u.compose(f), m);
   assertCommutes(u.compose(g), n);
-  return u;
+
+  return new CoconeMorphism(this, cone, u);
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -633,16 +643,16 @@ function SetCoproductComplement(cat, f) {
   var apex = f.codom();
   var A = f.dom();
   var B = apex.diff(f.image());
-  var g = cat.morphism(B, apex).initId();
+  var g = new TotalFunction(B, apex).initId();
 
   var diagram = new Diagram(cat, [['A',A],['B',B]]);
 
-  var components = new Map();
-  components.set('A', f);
-  components.set('B', g);
+  var component = new Map();
+  component.set('A', f);
+  component.set('B', g);
 
   // It's not an error, we call the base constructor of the base here
-  SetCoproduct.base.constructor.call(this, diagram, apex, components);
+  SetCoproduct.base.constructor.call(this, diagram, apex, component);
 
   this.complement = function () { return B; }
 }
@@ -653,10 +663,6 @@ extend(SetCoproductComplement, SetCoproduct);
 // SetEqualizer
 
 function SetEqualizer(cat, f, g) {
-  assertHasMorphism(cat, f);
-  assertHasMorphism(cat, g);
-  assertParallel(f, g);
-
   var A = f.dom();
   var B = f.codom();
 
@@ -664,31 +670,32 @@ function SetEqualizer(cat, f, g) {
     [['f','A','B',f],
      ['g','A','B',g]]);
 
-  var obj = new Set();
+  var apex = new Set();
   var codom = f.dom();
-  var q = cat.morphism(obj, codom);
+  var q = new TotalFunction(apex, codom);
   f.dom().forEach(function (x) {
     if (f.image(x) == g.image(x)) {
-      obj.add(x);
+      apex.add(x);
       q.push(x, x);
     }
   }.bind(this));
 
-  var fq = f.compose(q);
-  var gq = f.compose(q);
+  var component = new Map();
+  component.set('A', q);
+  component.set('B', f.compose(q));
 
-  assertCommutes(fq, gq);
-
-  var map = new Map();
-  map.set('A', q);
-  map.set('B', fq);
-
-  SetEqualizer.base.constructor.call(this, diagram, obj, map);
+  SetEqualizer.base.constructor.call(this, diagram, apex, component);
 }
 
 extend(SetEqualizer, LimitingCone);
 
 SetEqualizer.prototype.univ = function (m) {
+  var apex = m.dom();
+  var edge = this.diagram().dom().anyMorphism('A', 'B');
+  var f = this.diagram().mapMorphism(edge);
+  var component = new Map([['A',m],['B',f.compose(m)]]);
+  var cone = new LimitingCone(this.diagram(), apex, component);
+
   assertHasMorphism(this.cat(), m);
   var q = this.component('A');
   assertEqualCodom(q, m);
@@ -708,19 +715,16 @@ SetEqualizer.prototype.univ = function (m) {
   m.forEach(function (x, y) {
     mapping[x] = q.preimage(y).representative();
   }.bind(this));
-  var u = this.cat().morphism(m.dom(), this.apex(), mapping);
+  var u = new TotalFunction(m.dom(), this.apex(), mapping);
   assertCommutes(q.compose(u), m);
-  return u;
+
+  return new ConeMorphism(cone, this, u);
 };
 
 /////////////////////////////////////////////////////////////////////////////
 // SetCoequalizer
 
 function SetCoequalizer(cat, f, g) {
-  assertHasMorphism(cat, f);
-  assertHasMorphism(cat, g);
-  assertParallel(f, g);
-
   var A = f.dom();
   var B = f.codom();
 
@@ -728,31 +732,26 @@ function SetCoequalizer(cat, f, g) {
     [['f','A','B',f],
      ['g','A','B',g]]);
 
+  var apex = new Set();
   var dom = f.codom();
-  var obj = new Set();
   var eq = {};
   f.dom().forEach(function (x) {
     var fx = f.image(x);
     var gx = g.image(x);
     eq[fx] = eq[gx] = has(eq, fx) ? eq[fx] : has(eq, gx) ? eq[gx] : fx;
   });
-  var q = cat.morphism(dom, obj);
+  var q = new TotalFunction(dom, apex);
   dom.forEach(function (s) {
     var t = eq[s] || s;
-    obj.add(t);
+    apex.add(t);
     q.push(s, t);
   });
 
-  assertCommutes(q.compose(f), q.compose(g));
+  var component = new Map();
+  component.set('A', q.compose(f));
+  component.set('B', q);
 
-  var map = new Map();
-  map.set('A', q.compose(f));
-  map.set('B', q);
-
-  SetCoequalizer.base.constructor.call(this, diagram, obj, map);
-
-  //this.object = function () { return obj; }
-  //this.morphism = function (A) { return map.get(A); }
+  SetCoequalizer.base.constructor.call(this, diagram, apex, component);
 }
 
 extend(SetCoequalizer, ColimitingCocone);
@@ -782,7 +781,7 @@ SetCoequalizer.prototype.univ = function (m) {
   m.dom().forEach(function (x) {
     mapping[q.image(x)] = m.image(x);
   }.bind(this));
-  var u = this.cat().morphism(q.codom(), m.codom(), mapping);
+  var u = new TotalFunction(q.codom(), m.codom(), mapping);
   assertCommutes(u.compose(q), m);
   return u;
 };

@@ -5,8 +5,6 @@
 // TODO: Add illustrative diagrams describing all objects and morphisms.
 //       Especially for complements.
 
-// TODO: Replace all properties by property getters?
-
 // TODO: Add prefix I to mixins to distinguish them from classes?
 
 // TODO: Don't create instances of categories? Export SetCategory.prototype,
@@ -38,12 +36,15 @@ Category.prototype.id = function (A) {
   throwNotImplemented();
 };
 
+// (g : B -> C).compose(f : A -> B) = A -> C
 Category.prototype.compose = function (g, f) {
   throwNotImplemented();
 };
 
 Category.prototype.equals = function (cat) {
-  return this.constructor === cat.constructor;
+  throwNotImplemented(this);
+  // It will not work for generic categories like comma category or index category
+  //return this.constructor === cat.constructor;
 };
 
 Category.prototype.toString = function () {
@@ -51,58 +52,23 @@ Category.prototype.toString = function () {
 };
 
 /////////////////////////////////////////////////////////////////////////////
-// Complete Category Mixin
+// Morphism
 
-function CompleteCategory() {
+function Morphism(A, B) {
+  this.dom = function () { return A; };
+  this.codom = function () { return B; };
 }
-
-CompleteCategory.prototype.initial = function () {
-  throwNotImplemented();
-};
-
-CompleteCategory.prototype.product = function (A, B) {
-  throwNotImplemented();
-};
-
-CompleteCategory.prototype.equalizer = function (f, g) {
-  throwNotImplemented();
-};
-
-CompleteCategory.prototype.pullback = function (f, g) {
-  return new Pullback(this, f, g);
-};
 
 /////////////////////////////////////////////////////////////////////////////
-// Cocomplete Category Mixin
+// 2-morphism
 
-function CocompleteCategory() {
+function Morphism2(f, g) {
+  assert(f instanceof Morphism);
+  assert(g instanceof Morphism);
+  assertParallel(f, g);
+  Morphism2.base.constructor.call(this, f, g);
+  this.dom0 = function () { return f.dom(); };
+  this.codom0 = function () { return f.codom(); };
 }
 
-CocompleteCategory.prototype.terminal = function () {
-  throwNotImplemented();
-};
-
-CocompleteCategory.prototype.coproduct = function (A, B) {
-  throwNotImplemented();
-};
-
-CocompleteCategory.prototype.coequalizer = function (f, g) {
-  throwNotImplemented();
-};
-
-CocompleteCategory.prototype.pushout = function (f, g) {
-  return new Pushout(this, f, g);
-};
-
-// TODO: Move to the separate Regular Category Mixin?
-CocompleteCategory.prototype.pushoutComplement = function (f, p) {
-  return new PushoutComplement(this, f, p);
-};
-
-/////////////////////////////////////////////////////////////////////////////
-// Bicomplete Category Mixin
-
-function BicompleteCategory() {
-}
-
-combine(BicompleteCategory, CompleteCategory, CocompleteCategory);
+extend(Morphism2, Morphism);

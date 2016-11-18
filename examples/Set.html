@@ -29,12 +29,12 @@ var objABCDE = setCat.object(['a','b','c','d','e']);
 var objABCDEF = setCat.object(['a','b','c','d','e','f']);
 var objABCDEFG = setCat.object(['a','b','c','d','e','f','g']);
 
-var f01 = setCat.morphism(obj123,  objABCD, {1: 'c', 2: 'c', 3: 'd'});
-var g01 = setCat.morphism(objABCD, objAB,   {'a': 'a', 'b': 'b'});
-var h01 = setCat.morphism(objAB,   obj123,  {'a': 1, 'b': 1});
+var f01 = setCat.morphism(obj123, objABCD, {1: 'c', 2: 'c', 3: 'd'});
+var g01 = setCat.morphism(objAB,  objABCD, {'a': 'a', 'b': 'b'});
+var h01 = setCat.morphism(objAB,  obj123,  {'a': 1, 'b': 1});
 showSetCategoryView('diagram01', setCat, {'A': obj123, 'B': objABCD, 'C': objAB},
   {'f': {dom: 'A', codom: 'B', morphism: f01},
-   'g': {dom: 'B', codom: 'C', morphism: g01},
+   'g': {dom: 'C', codom: 'B', morphism: g01},
    'h': {dom: 'C', codom: 'A', morphism: h01}});
 
 var f02 = setCat.morphism(obj1234, obj123, {1: 1, 2: 2, 3: 3, 4: 3});
@@ -81,8 +81,8 @@ showSetCategoryView('diagram08', setCat, {'A': obj123, 'B': objABC},
    'idB': {dom: 'B', codom: 'B', morphism: setCat.id(objABC)}});
 
 showSetCategoryView('diagram09', setCat, {'A': obj1234, 'B': objABC, 'T': T.apex()},
-  {'f': {dom: 'A', codom: 'T', morphism: T.univ(obj1234)},
-   'g': {dom: 'B', codom: 'T', morphism: T.univ(objABC)}});
+  {'f': {dom: 'A', codom: 'T', morphism: T.univ(obj1234).morphism()},
+   'g': {dom: 'B', codom: 'T', morphism: T.univ(objABC).morphism()}});
 
 var elT = T.apex().representative();
 var f10 = setCat.morphism(T.apex(), obj1234);
@@ -97,8 +97,8 @@ showSetCategoryView('diagram10', setCat, {'A1': obj1234, 'A2': obj1234, 'B': obj
    'h': {dom: 'T', codom: 'B',  morphism: h10}});
 
 showSetCategoryView('diagram11', setCat, {'A': obj1234, 'B': objABC, 'I': I.apex()},
-  {'f': {dom: 'I', codom: 'A', morphism: I.univ(obj1234)},
-   'g': {dom: 'I', codom: 'B', morphism: I.univ(objABC)}});
+  {'f': {dom: 'I', codom: 'A', morphism: I.univ(obj1234).morphism()},
+   'g': {dom: 'I', codom: 'B', morphism: I.univ(objABC).morphism()}});
 
 var prod12AB = setCat.product(obj12, objAB);
 var p12 = setCat.morphism(obj12345, obj12, {1:  1,  2:  1,  3:  2,  4:  2,  5:  2});
@@ -108,7 +108,7 @@ showSetCategoryView('diagram12', setCat, {'A': obj12, 'B': objAB, 'AxB': prod12A
    'π2': {dom: 'AxB', codom: 'B',   morphism: prod12AB.component('B')},
    'f1': {dom: 'C',   codom: 'A',   morphism: p12},
    'f2': {dom: 'C',   codom: 'B',   morphism: q12},
-   'u':  {dom: 'C',   codom: 'AxB', morphism: prod12AB.univ(p12, q12)}});
+   'u':  {dom: 'C',   codom: 'AxB', morphism: prod12AB.univ(p12, q12).morphism()}});
 
 var prod123AB = setCat.product(obj123, objAB);
 showSetCategoryView('diagram13', setCat, {'A': obj123, 'B': objAB, 'AxB': prod123AB.apex()},
@@ -118,7 +118,7 @@ showSetCategoryView('diagram13', setCat, {'A': obj123, 'B': objAB, 'AxB': prod12
 showSetCategoryView('diagram14', setCat, {'A': obj12, 'B': objAB, 'AxB': prod12AB.apex(), 'C': obj12345},
   {'f1': {dom: 'C',   codom: 'A',   morphism: p12},
    'f2': {dom: 'C',   codom: 'B',   morphism: q12},
-   'u':  {dom: 'C',   codom: 'AxB', morphism: prod12AB.univ(p12, q12)}});
+   'u':  {dom: 'C',   codom: 'AxB', morphism: prod12AB.univ(p12, q12).morphism()}});
 
 var sum123AB = setCat.coproduct(obj123, objAB);
 var p15 = setCat.morphism(obj123, objABC, { 1 : 'a',  2 : 'b', 3: 'c'});
@@ -128,7 +128,7 @@ showSetCategoryView('diagram15', setCat, {'A': obj123, 'B': objAB, 'A+B': sum123
    'i2': {dom: 'B',   codom: 'A+B', morphism: sum123AB.component('B')},
    'f1': {dom: 'A',   codom: 'C',   morphism: p15},
    'f2': {dom: 'B',   codom: 'C',   morphism: q15},
-   'u':  {dom: 'A+B', codom: 'C',   morphism: sum123AB.univ(p15, q15)}});
+   'u':  {dom: 'A+B', codom: 'C',   morphism: sum123AB.univ(p15, q15).morphism()}});
 
 showSetCategoryView('diagram16', setCat, {'A': obj123, 'B': objAB, 'A+B': sum123AB.apex()},
   {'f': {dom: 'A', codom: 'A+B', morphism: sum123AB.component('A')},
@@ -139,7 +139,7 @@ var g17 = setCat.morphism(objAB,  objABC, {'a': 'b', 'b': 'c'});
 showSetCategoryView('diagram17', setCat, {'A': obj123, 'B': objAB, 'A+B': sum123AB.apex(), 'C': objABC},
   {'p': {dom: 'A',   codom: 'C', morphism: f17},
    'q': {dom: 'B',   codom: 'C', morphism: g17},
-   'u': {dom: 'A+B', codom: 'C', morphism: sum123AB.univ(f17, g17)}});
+   'u': {dom: 'A+B', codom: 'C', morphism: sum123AB.univ(f17, g17).morphism()}});
 
 var sum123ABcomp = setCat.coproductComplement(sum123AB.component('A'));
 showSetCategoryView('diagram18', setCat, {'A': obj123, 'B': sum123ABcomp.complement(), 'A+B': sum123ABcomp.apex()},
@@ -155,7 +155,7 @@ showSetCategoryView('diagram19', setCat, {'X': obj1234, 'Y': objABC, 'E': eq19.a
    'g':  {dom: 'X', codom: 'Y', morphism: g19},
    'eq': {dom: 'E', codom: 'X', morphism: eq19.component('A')},
    'm':  {dom: 'O', codom: 'X', morphism: m19},
-   'u':  {dom: 'O', codom: 'E', morphism: eq19.univ(m19)}});
+   'u':  {dom: 'O', codom: 'E', morphism: eq19.univ(m19).morphism()}});
 
 showSetCategoryView('diagram20', setCat, {'X1': obj1234, 'X2': obj1234, 'Y': objABC, 'E': eq19.apex()},
   {'f':   {dom: 'X1', codom: 'Y', morphism: f19},

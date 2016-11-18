@@ -1,77 +1,25 @@
 'use strict';
 
 /////////////////////////////////////////////////////////////////////////////
-// Morphism
-
-function Morphism(A, B) {
-  this.dom = function () { return A; };
-  this.codom = function () { return B; };
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// 2-morphism
-
-function Morphism2(f, g) {
-  assert(f instanceof Morphism);
-  assert(g instanceof Morphism);
-  assertParallel(f, g);
-  Morphism2.base.constructor.call(this, f, g);
-  this.dom0 = function () { return f.dom(); };
-  this.codom0 = function () { return f.codom(); };
-}
-
-extend(Morphism2, Morphism);
-
-/////////////////////////////////////////////////////////////////////////////
 // Functor
 
-// TODO: Add functor composition.
-// In general one should use Category::compose() instead of Morphism::compose()
-
 function Functor(C, D, mapObject, mapMorphism) {
+  assert(typeof mapObject == 'function', 'The mapObject argument must be a Function');
+  assert(typeof mapMorphism == 'function', 'The mapMorphism argument must be a Function');
   Functor.base.constructor.call(this, C, D);
-  if (typeof mapObject == 'function') {
-    this.mapObject = function (A) {
-      assertHasObject(this.dom(), A);
-      var dst = mapObject(A);
-      assertHasObject(this.codom(), dst);
-      return dst;
-    };
-  }
-  else if (mapObject instanceof Map) {
-    mapObject.forEach(function (dst, src) {
-      assertHasObject(this.dom(), src);
-      assertHasObject(this.codom(), dst);
-    }.bind(this));
-    this.mapObject = function (A) {
-      assertHasObject(this.dom(), A);
-      return mapObject.get(A);
-    };
-  }
-  else {
-    throw 'The mapObject argument must be either Function or Map';
-  }
-  if (typeof mapMorphism == 'function') {
-    this.mapMorphism = function (f) {
-      assertHasMorphism(this.dom(), f);
-      var dst = mapMorphism(f);
-      assertHasMorphism(this.codom(), dst);
-      return dst;
-    };
-  }
-  else if (mapMorphism instanceof Map) {
-    mapMorphism.forEach(function (dst, src) {
-      assertHasMorphism(this.dom(), src);
-      assertHasMorphism(this.codom(), dst);
-    }.bind(this));
-    this.mapMorphism = function (f) {
-      assertHasMorphism(this.dom(), f);
-      return mapMorphism.get(f);
-    };
-  }
-  else {
-    throw 'The mapMorphism argument must be either Function or Map';
-  }
+
+  this.mapObject = function (A) {
+    assertHasObject(this.dom(), A);
+    var dst = mapObject(A);
+    assertHasObject(this.codom(), dst);
+    return dst;
+  };
+  this.mapMorphism = function (f) {
+    assertHasMorphism(this.dom(), f);
+    var dst = mapMorphism(f);
+    assertHasMorphism(this.codom(), dst);
+    return dst;
+  };
 }
 
 extend(Functor, Morphism);
@@ -89,35 +37,20 @@ Functor.prototype.compose = function (F) {
   return func;
 };
 
-function Cat() {
-}
-
-extend(Cat, Category);
-
-Cat.prototype.id = function (A) {
-  return new IdFunctor(A);
-};
-
-Cat.prototype.compose = function (g, f) {
-  return g.compose(f);
-};
-
 /////////////////////////////////////////////////////////////////////////////
 // IdFunctor
 
 function IdFunctor(C) {
-  IdFunctor.base.constructor.call(this, C, C);
+  var mapObject = function (A) {
+    return A;
+  };
+  var mapMorphism = function (f) {
+    return f;
+  };
+  IdFunctor.base.constructor.call(this, C, C, mapObject, mapMorphism);
 }
 
 extend(IdFunctor, Functor);
-
-IdFunctor.prototype.mapObject = function (A) {
-  return A;
-};
-
-IdFunctor.prototype.mapMorphism = function (f) {
-  return f;
-};
 
 /////////////////////////////////////////////////////////////////////////////
 // ConstantFunctor
@@ -126,11 +59,9 @@ function ConstantFunctor(C, D, N) {
   assertHasObject(D, N);
   var id = D.id(N);
   var mapObject = function (A) {
-    assertHasObject(C, A);
     return N;
   }
   var mapMorphism = function (f) {
-    assertHasMorphism(C, f);
     return id;
   }
   ConstantFunctor.base.constructor.call(this, C, D, mapObject, mapMorphism);
@@ -139,57 +70,49 @@ function ConstantFunctor(C, D, N) {
 extend(ConstantFunctor, Functor);
 
 /////////////////////////////////////////////////////////////////////////////
-// FunctorCategory
-
-function FunctorCategory(C, D) {
-
-}
-
-extend(FunctorCategory, Category);
-
-/////////////////////////////////////////////////////////////////////////////
 // DiagonalFunctor
 
 function DiagonalFunctor(J, C) {
   var CJ = new FunctorCategory(J, C);
-  this._J = J;
-  DiagonalFunctor.base.constructor.call(this, C, CJ);
+  var mapObject = function (A) {
+    return new ConstantFunctor(J, C, A);
+  };
+  var mapMorphism = function (f) {
+    throwNotImplemented();
+  };
+  DiagonalFunctor.base.constructor.call(this, C, CJ, mapObject, mapMorphism);
 }
 
 extend(DiagonalFunctor, Functor);
-
-DiagonalFunctor.prototype.mapObject = function (A) {
-  return new ConstantFunctor(this._J, C, A);
-};
-
-DiagonalFunctor.prototype.mapMorphism = function (f) {
-  throwNotImplemented();
-};
 
 /////////////////////////////////////////////////////////////////////////////
 // CrossProductFunctor
 
 function CrossProductFunctor(C) {
-  CrossProductFunctor.base.constructor.call(this, C, C);
+  var mapObject = function (A) {
+    return this.dom().product(A, A).obj;
+  };
+  var mapMorphism = function (f) {
+    var pa = this.dom().product(f.dom(), f.dom());
+    var pb = this.dom().product(f.codom(), f.codom());
+    return pb.univ(f.compose(pa.f), f.compose(pa.g));
+  };
+  CrossProductFunctor.base.constructor.call(this, C, C, mapObject, mapMorphism);
 }
 
 extend(CrossProductFunctor, Functor);
 
-CrossProductFunctor.prototype.mapObject = function (A) {
-  return this.dom().product(A, A).obj;
-};
-
-CrossProductFunctor.prototype.mapMorphism = function (f) {
-  var pa = this.dom().product(f.dom(), f.dom());
-  var pb = this.dom().product(f.codom(), f.codom());
-  return pb.univ(f.compose(pa.f), f.compose(pa.g));
-};
-
 /////////////////////////////////////////////////////////////////////////////
-// Diagram
+// FreeCategoryFunctor
 
 function FreeCategoryFunctor() {
+  throwNotImplemented();
 }
+
+extend(FreeCategoryFunctor, Functor);
+
+/////////////////////////////////////////////////////////////////////////////
+// IndexCategory
 
 // IndexCategory = FreeCategory(Graph) ?
 
@@ -223,53 +146,129 @@ IndexCategory.prototype.hasMorphism = function (f) {
          this.hasObject(this._target.image(f));
 }
 
+IndexCategory.prototype.equals = function (C) {
+  return this.objects().equals(C.objects()) &&
+         this.morphisms().equals(C.morphisms()) &&
+         this._source.equals(C._source) &&
+         this._target.equals(C._target);
+}
+
+IndexCategory.prototype.anyMorphism = function (A, B) {
+  assertHasObject(this, A);
+  assertHasObject(this, B);
+  var edges = this._edges.elements().filter(function (edge) {
+    return this._source.image(edge) === A && this._target.image(edge) === B;
+  }, this);
+  assert(edges.length > 0);
+  return edges[0];
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// Diagram
+
+// mapObject:   [[src1,tgt1],[src2,tgt2],...]
+// mapMorphism: [[src1,dom1,codom1,tgt1],[src2,dom2,codom2,tgt2],...]
 function Diagram(C, mapObject, mapMorphism) {
-  if (isUndefined(mapObject)) {
-    mapObject = [];
-  }
-  if (isUndefined(mapMorphism)) {
-    mapMorphism = [];
-  }
+  assert(C instanceof Category, 'The first argument must be a category: ' + C);
+  if (isUndefined(mapObject)) { mapObject = []; }
+  if (isUndefined(mapMorphism)) { mapMorphism = []; }
+  assert(mapObject instanceof Array);
+  assert(mapMorphism instanceof Array);
+
   var mapObject2 = new Map(mapObject);
   var mapMorphism2 = new Map();
   mapMorphism.forEach(function (map) {
     mapMorphism2.set(map[0], map[3]);
   });
+
   var nodes = !isUndefined(mapObject2) ? Array.from(mapObject2.keys()) : [];
-  var edges = !isUndefined(mapMorphism) ? mapMorphism : [];
+  var edges = mapMorphism;
   var indexCategory = new IndexCategory(nodes, edges);
 
-  Diagram.base.constructor.call(this, indexCategory, C, mapObject2, mapMorphism2);
+  // Check that each target object of the functor belongs to the target category
+  mapObject2.forEach(function (dst, src) {
+    assertHasObject(C, dst);
+  });
+  // Check that each target morphism of the functor belongs to the target category
+  mapMorphism2.forEach(function (dst, src) {
+    assertHasMorphism(C, dst);
+  });
+  // Check that functor preserves domains and codomains of morphisms
+  indexCategory.morphisms().forEach(function (f) {
+    var FA = mapObject2.get(indexCategory.dom(f));
+    var FB = mapObject2.get(indexCategory.codom(f));
+    assertEqualObjects(mapMorphism2.get(f).dom(), FA, 'Functor doesn\'t preserve a domain of the morphism ' + f);
+    assertEqualObjects(mapMorphism2.get(f).codom(), FB, 'Functor doesn\'t preserve a codomain of the morphism ' + f);
+  });
+
+  Diagram.base.constructor.call(this, indexCategory, C, mapObject2.get.bind(mapObject2), mapMorphism2.get.bind(mapMorphism2));
 
   // TODO: Immutable diagram may be better:
   // https://www.sitepoint.com/immutability-javascript/
-  this.clone = function () { return new Diagram(arguments) };
+  //this.clone = function () { return new Diagram(arguments); };
+  this.clone = function () { return this; };
 }
 
 extend(Diagram, Functor);
+
+Diagram.prototype.equals = function (D) {
+  return this.dom().equals(D.dom()) &&
+         this.dom().objects().every(function (A) {
+           return this.mapObject(A).equals(D.mapObject(A)) }, this) &&
+         this.dom().morphisms().every(function (f) {
+           return this.mapMorphism(f).equals(D.mapMorphism(f)) }, this);
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // NaturalTransformation
 
 function NaturalTransformation(F, G, component) {
   NaturalTransformation.base.constructor.call(this, F, G);
+
+  function checkComponent(cat, A, h) {
+    assertHasMorphism(cat, h);
+    var FA = F.mapObject(A);
+    var GA = G.mapObject(A);
+    assertEqualObjects(FA, h.dom(), 'The domain of the natural transformation component at object ' + A + ' must be F(' + A + ')');
+    assertEqualObjects(GA, h.codom(), 'The codomain of the natural transformation component at object ' + A + ' must be G(' + A + ')');
+  }
+
   if (typeof component == 'function') {
     this.component = function (A) {
       assertHasObject(this.dom0(), A);
-      var dst = component(A);
-      assertHasMorphism(this.codom0(), dst);
-      return dst;
+      var h = component(A);
+      checkComponent(this.codom0(), A, h);
+      return h;
     };
   }
   else if (component instanceof Map) {
+    assert(this.dom0() instanceof IndexCategory, 'The components may be specified as Map only if the domain of the functors is IndexCategory')
+    var indexCategory = this.dom0();
+    var targetCategory = this.codom0();
+    // Check that components are defined for all objects of the source category
+    // and check domain and codomain of components
+    indexCategory.objects().forEach(function (A) {
+      assert(component.has(A), 'The natural transformation doesn\'t has a component for object ' + A + ' of the source category');
+      var h = component.get(A);
+      checkComponent(targetCategory, A, h);
+    });
+    // Check that components are defined for objects of the source category
+    // and check that components are morphisms of the target category
     component.forEach(function (dst, src) {
-      assertHasObject(this.dom0(), src);
-      assertHasMorphism(this.codom0(), dst);
-    }.bind(this));
+      assertHasObject(indexCategory, src);
+      assertHasMorphism(targetCategory, dst);
+    });
+    // Check that all square diagrams of the natural transformation are commutative
+    indexCategory.morphisms().forEach(function (f) {
+      var Ff = F.mapMorphism(f);
+      var Gf = G.mapMorphism(f);
+      var hA = component.get(indexCategory.dom(f));
+      var hB = component.get(indexCategory.codom(f));
+      assertCommutes(hB.compose(Ff), Gf.compose(hA));
+    });
     this.component = function (A) {
       assertHasObject(this.dom0(), A);
       return component.get(A);
-      // TODO: Check result
     };
   }
   else {
@@ -287,3 +286,12 @@ NaturalTransformation.prototype.compose = function (f) {
   };
   return new NaturalTransformation(f.dom(), g.codom(), component);
 }
+
+/////////////////////////////////////////////////////////////////////////////
+// FunctorCategory
+
+function FunctorCategory(C, D) {
+
+}
+
+extend(FunctorCategory, Category);

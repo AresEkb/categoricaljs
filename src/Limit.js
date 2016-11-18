@@ -13,12 +13,12 @@
 /////////////////////////////////////////////////////////////////////////////
 // Cone
 
-function Cone(diagram, apex, sides) {
+function Cone(diagram, apex, component) {
   // TODO: Replace instanceof by hasObject
   assert(diagram instanceof Diagram);
   var F = new ConstantFunctor(diagram.dom(), diagram.codom(), apex);
   var G = diagram;
-  Cone.base.constructor.call(this, F, G, sides);
+  Cone.base.constructor.call(this, F, G, component);
 
   var cat = diagram.codom();
   this.apex = function () { return apex; };
@@ -40,12 +40,12 @@ Cone.prototype.toString = function () {
 /////////////////////////////////////////////////////////////////////////////
 // Cocone
 
-function Cocone(diagram, apex, sides) {
+function Cocone(diagram, apex, component) {
   // TODO: Replace instanceof by hasObject
   assert(diagram instanceof Diagram);
   var F = diagram;
   var G = new ConstantFunctor(diagram.dom(), diagram.codom(), apex);
-  Cone.base.constructor.call(this, F, G, sides);
+  Cone.base.constructor.call(this, F, G, component);
 
   var cat = diagram.codom();
   this.apex = function () { return apex; };
@@ -65,15 +65,63 @@ Cocone.prototype.toString = function () {
 };
 
 /////////////////////////////////////////////////////////////////////////////
+// ConeMorphism
+
+function ConeMorphism(A, B, f) {
+  // TODO: Replace instanceof by hasObject
+  assert(A instanceof Cone);
+  assert(B instanceof Cone);
+  assert(A.diagram().equals(B.diagram()));
+  assert(A.cat().equals(B.cat()));
+  assertHasMorphism(A.cat(), f);
+
+  A.diagram().dom().objects().forEach(function (X) {
+    var hAX = A.component(X);
+    var hBX = B.component(X);
+    assertCommutes(hAX, hBX.compose(f));
+  });
+
+  ConeMorphism.base.constructor.call(this, A, B);
+
+  this.morphism = function () { return f; }
+}
+
+extend(ConeMorphism, Morphism);
+
+/////////////////////////////////////////////////////////////////////////////
+// CoconeMorphism
+
+function CoconeMorphism(A, B, f) {
+  // TODO: Replace instanceof by hasObject
+  assert(A instanceof Cocone);
+  assert(B instanceof Cocone);
+  assert(A.diagram().equals(B.diagram()));
+  assert(A.cat().equals(B.cat()));
+  assertHasMorphism(A.cat(), f);
+
+  A.diagram().dom().objects().forEach(function (X) {
+    var hAX = A.component(X);
+    var hBX = B.component(X);
+    assertCommutes(hBX, f.compose(hAX));
+  });
+
+  CoconeMorphism.base.constructor.call(this, A, B);
+
+  this.morphism = function () { return f; }
+}
+
+extend(CoconeMorphism, Morphism);
+
+/////////////////////////////////////////////////////////////////////////////
 // LimitingCone
 
-function LimitingCone(diagram, apex, sides) {
-  LimitingCone.base.constructor.call(this, diagram, apex, sides);
+function LimitingCone(diagram, apex, component) {
+  LimitingCone.base.constructor.call(this, diagram, apex, component);
 }
 
 extend(LimitingCone, Cone);
 
-// For any cone with the same diagram return universal morphism u : A -> object
+// For any cone A with the same diagram return universal morphism u : A -> this
 LimitingCone.prototype.univ = function (A) {
   throwNotImplemented();
 }
@@ -81,13 +129,13 @@ LimitingCone.prototype.univ = function (A) {
 /////////////////////////////////////////////////////////////////////////////
 // ColimitingCocone
 
-function ColimitingCocone(diagram, apex, sides) {
-  ColimitingCocone.base.constructor.call(this, diagram, apex, sides);
+function ColimitingCocone(diagram, apex, component) {
+  ColimitingCocone.base.constructor.call(this, diagram, apex, component);
 }
 
 extend(ColimitingCocone, Cocone);
 
-// For any cone with the same diagram return universal morphism u : A -> object
+// For any cocone with the same diagram return universal morphism u : this -> A
 ColimitingCocone.prototype.univ = function (A) {
   throwNotImplemented();
 }
@@ -112,34 +160,6 @@ LimitFunctor.prototype.mapMorphism = function (f) {
   assertHasMorphism(this.dom(), f);
   throwNotImplemented();
 };
-
-/////////////////////////////////////////////////////////////////////////////
-// Limit
-
-function Limit(diagram) {
-  Limit.base.constructor.call(this, diagram);
-}
-
-extend(Limit, Cone);
-
-// For any object A of the category returns universal morphism u : A -> object
-Limit.prototype.univ = function (A) {
-  throwNotImplemented();
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// Colimit
-
-function Colimit(diagram) {
-  Colimit.base.constructor.call(this, diagram);
-}
-
-extend(Colimit, Cocone);
-
-// For any object A of the category returns universal morphism u : object -> A
-Colimit.prototype.univ = function () {
-  throwNotImplemented();
-}
 
 /////////////////////////////////////////////////////////////////////////////
 // Pullback Class
@@ -185,7 +205,7 @@ Pullback.prototype.univ = function (m, n) {
   var q = this.component('B');
   assertEqualCodom(m, p);
   assertEqualCodom(n, q);
-  var u = this.equalizer().univ(this.product().univ(m, n));
+  var u = this.equalizer().univ(this.product().univ(m, n).morphism()).morphism();
   assertCommutes(p.compose(u), m);
   assertCommutes(q.compose(u), n);
   return u;
@@ -277,8 +297,65 @@ Pushout.prototype.univ = function (m, n) {
   assertEqualCodom(m, n);
   assertEqualDom(m, p);
   assertEqualDom(n, q);
-  var u = this.coequalizer().univ(this.coproduct().univ(m, n));
+  var u = this.coequalizer().univ(this.coproduct().univ(m, n).morphism());
   assertCommutes(u.compose(p), m);
   assertCommutes(u.compose(q), n);
   return u;
 };
+
+/////////////////////////////////////////////////////////////////////////////
+// Complete Category Mixin
+
+function CompleteCategory() {
+}
+
+CompleteCategory.prototype.initial = function () {
+  throwNotImplemented();
+};
+
+CompleteCategory.prototype.product = function (A, B) {
+  throwNotImplemented();
+};
+
+CompleteCategory.prototype.equalizer = function (f, g) {
+  throwNotImplemented();
+};
+
+CompleteCategory.prototype.pullback = function (f, g) {
+  return new Pullback(this, f, g);
+};
+
+/////////////////////////////////////////////////////////////////////////////
+// Cocomplete Category Mixin
+
+function CocompleteCategory() {
+}
+
+CocompleteCategory.prototype.terminal = function () {
+  throwNotImplemented();
+};
+
+CocompleteCategory.prototype.coproduct = function (A, B) {
+  throwNotImplemented();
+};
+
+CocompleteCategory.prototype.coequalizer = function (f, g) {
+  throwNotImplemented();
+};
+
+CocompleteCategory.prototype.pushout = function (f, g) {
+  return new Pushout(this, f, g);
+};
+
+// TODO: Move to the separate Regular Category Mixin?
+CocompleteCategory.prototype.pushoutComplement = function (f, p) {
+  return new PushoutComplement(this, f, p);
+};
+
+/////////////////////////////////////////////////////////////////////////////
+// Bicomplete Category Mixin
+
+function BicompleteCategory() {
+}
+
+combine(BicompleteCategory, CompleteCategory, CocompleteCategory);

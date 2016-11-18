@@ -2,49 +2,50 @@
 
 var cl = console.log;
 
-function assert(condition, message) {
+function assert(condition, messages) {
   if (!condition) {
+    var message = Array.prototype.slice.call(arguments, 1).filter(Boolean).join('. ');
     throw message || 'Assertion failed';
   }
 }
 
-function assertHasObject(cat, A) {
-  assert(cat.hasObject(A),
+function assertHasObject(cat, A, message) {
+  assert(cat.hasObject(A), message,
     'The category ' + cat + ' doesn\'t has the object ' + A);
 }
 
-function assertHasMorphism(cat, f) {
-  assert(cat.hasMorphism(f),
+function assertHasMorphism(cat, f, message) {
+  assert(cat.hasMorphism(f), message,
     'The category ' + cat + ' doesn\'t has the morphism ' + f);
 }
 
-function assertEqualObjects(A, B) {
-  assert(A.equals(B),
+function assertEqualObjects(A, B, message) {
+  assert(A.equals(B), message,
     'The following objects must be equal:\n' + A + ' and\n' + B);
 }
 
-function assertEqualDom(f, g) {
-  assert(f.dom().equals(g.dom()),
+function assertEqualDom(f, g, message) {
+  assert(f.dom().equals(g.dom()), message,
     'The following morphisms must have the same domain:\n' + f + ' and\n' + g);
 }
 
-function assertEqualCodom(f, g) {
-  assert(f.codom().equals(g.codom()),
+function assertEqualCodom(f, g, message) {
+  assert(f.codom().equals(g.codom()), message,
     'The following morphisms must have the same codomain:\n' + f + ' and\n' + g);
 }
 
-function assertComposable(f, g) {
-  assert(f.codom().equals(g.dom()),
+function assertComposable(f, g, message) {
+  assert(f.codom().equals(g.dom()), message,
     'The codomain of the first morphism must be equal to the domain of the second morphism:\n' + f + ' and\n' + g);
 }
 
-function assertParallel(f, g) {
-  assert(f.dom().equals(g.dom()) && f.codom().equals(g.codom()),
+function assertParallel(f, g, message) {
+  assert(f.dom().equals(g.dom()) && f.codom().equals(g.codom()), message,
     'The following morphisms must be parallel:\n' + f + ' and\n' + g);
 }
 
-function assertCommutes(f, g) {
-  assert(f.commutes(g),
+function assertCommutes(f, g, message) {
+  assert(f.commutes(g), message,
     'The following morphisms must commute:\n' + f + ' and\n' + g);
 }
 
@@ -52,8 +53,13 @@ function assertDiagramCommutes(diagram) {
   throwNotImplemented();
 }
 
-function throwNotImplemented() {
-  throw 'Not implemented';
+function throwNotImplemented(obj) {
+  if (!isUndefined(obj)) {
+    throw 'Not implemented for ' + obj;
+  }
+  else {
+    throw 'Not implemented';
+  }
 }
 
 function isUndefined(x) { return typeof x == 'undefined'; }
