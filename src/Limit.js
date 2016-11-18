@@ -18,12 +18,11 @@ function Cone(diagram, apex, component) {
   assert(diagram instanceof Diagram);
   var F = new ConstantFunctor(diagram.dom(), diagram.codom(), apex);
   var G = diagram;
+
   Cone.base.constructor.call(this, F, G, component);
 
-  var cat = diagram.codom();
   this.apex = function () { return apex; };
   this.diagram = function () { return diagram.clone(); };
-  this.cat = function () { return cat; }; // TODO: Remove? Cone is an object of Functor Category
 }
 
 extend(Cone, NaturalTransformation);
@@ -45,12 +44,11 @@ function Cocone(diagram, apex, component) {
   assert(diagram instanceof Diagram);
   var F = diagram;
   var G = new ConstantFunctor(diagram.dom(), diagram.codom(), apex);
+
   Cone.base.constructor.call(this, F, G, component);
 
-  var cat = diagram.codom();
   this.apex = function () { return apex; };
   this.diagram = function () { return diagram.clone(); };
-  this.cat = function () { return cat; };
 }
 
 extend(Cocone, NaturalTransformation);
@@ -72,8 +70,7 @@ function ConeMorphism(A, B, f) {
   assert(A instanceof Cone);
   assert(B instanceof Cone);
   assert(A.diagram().equals(B.diagram()));
-  assert(A.cat().equals(B.cat()));
-  assertHasMorphism(A.cat(), f);
+  assertHasMorphism(A.codom0(), f);
 
   A.diagram().dom().objects().forEach(function (X) {
     var hAX = A.component(X);
@@ -96,8 +93,7 @@ function CoconeMorphism(A, B, f) {
   assert(A instanceof Cocone);
   assert(B instanceof Cocone);
   assert(A.diagram().equals(B.diagram()));
-  assert(A.cat().equals(B.cat()));
-  assertHasMorphism(A.cat(), f);
+  assertHasMorphism(A.codom0(), f);
 
   A.diagram().dom().objects().forEach(function (X) {
     var hAX = A.component(X);
