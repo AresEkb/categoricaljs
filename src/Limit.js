@@ -29,9 +29,9 @@ extend(Cone, NaturalTransformation);
 
 Cone.prototype.toString = function () {
   var map = new Map();
-  map.set('Object', this.object());
-  this.diagram().mapObject().forEach(function (obj, name) {
-    map.set('Object -> ' + name, this.morphism(obj));
+  map.set('Apex', this.apex());
+  this.diagram().dom().objects().forEach(function (A) {
+    map.set('Apex -> ' + A, this.component(A));
   }.bind(this));
   return mapToString(map);
 };
@@ -55,9 +55,9 @@ extend(Cocone, NaturalTransformation);
 
 Cocone.prototype.toString = function () {
   var map = new Map();
-  map.set('Object', this.object());
-  this.diagram().mapObject().forEach(function (obj, name) {
-    map.set(name + ' -> Object', this.morphism(obj));
+  map.set('Apex', this.apex());
+  this.diagram().dom().objects().forEach(function (A) {
+    map.set(A + ' -> Apex', this.component(A));
   }.bind(this));
   return mapToString(map);
 };

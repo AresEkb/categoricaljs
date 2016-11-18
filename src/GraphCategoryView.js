@@ -42,107 +42,97 @@ function GraphCategoryView(model) {
   this.start = function () {
     data = { nodes : [], links : [] };
 
-    var objectMap = model.objectMap();
-    for (var name in objectMap) {
-      if (has(objectMap, name)) {
-        var obj = objectMap[name];
-        var groupId = groups.push(name) - 1;
-        // Add the object
-//console.log(obj);
-        //var objNode = { name : name, label : name, group : groupId, object : true, size: obj.size()+1, nodes: [] };
-        var objNode = { name : name, label : name, group : groupId, object : true, size: 1, nodes: [] };
-        data.nodes.push(objNode);
-        // Add the object label
-        data.nodes.push({ name : '_l_'+name, label : name, group : groupId, group_data : objNode, isLabel : true });
-        // Add object elements
-        //var prev = '_l_'+name;
-        //var t = name+'['+obj.nodes.representative()+']';
-        //data.links.push({ source : prev, target : t, inner : true, value : 1, ordinal : 0 });
-        obj.nodes.forEach(function (el) {
-          var elName = name+'['+el+']';
-          var elNode = { name : elName, label : el, group : groupId, group_data : objNode };
-          objNode.nodes.push(elNode);
-          data.nodes.push(elNode);
-          //data.links.push({ source : prev, target : elName, inner : true, value : 1, ordinal : 0 });
-          //prev = name+'['+el+']';
-        });
-//console.log(obj);
-        obj.edges.forEach(function (edge) {
-          var s = name+'['+obj.source.image(edge)+']';
-          var t = name+'['+obj.target.image(edge)+']';
-          //var elNode = { name : elName, label : el, group : groupId, group_data : objNode };
-//console.log(edge, s, t);
-          //objNode.nodes.push(elNode);
-          //data.nodes.push(elNode);
-          data.links.push({ source : s, target : t, element : true, value : 1, ordinal : 0 });
-          //prev = name+'['+el+']';
-        });
-      }
-    }
+    model.dom().objects().forEach(function (name) {
+      var obj = model.mapObject(name);
+      var groupId = groups.push(name) - 1;
+      // Add the object
+      //var objNode = { name : name, label : name, group : groupId, object : true, size: obj.size()+1, nodes: [] };
+      var objNode = { name : name, label : name, group : groupId, object : true, size: 1, nodes: [] };
+      data.nodes.push(objNode);
+      // Add the object label
+      data.nodes.push({ name : '_l_'+name, label : name, group : groupId, group_data : objNode, isLabel : true });
+      // Add object elements
+      //var prev = '_l_'+name;
+      //var t = name+'['+obj.nodes.representative()+']';
+      //data.links.push({ source : prev, target : t, inner : true, value : 1, ordinal : 0 });
+      obj.nodes.forEach(function (el) {
+        var elName = name+'['+el+']';
+        var elNode = { name : elName, label : el, group : groupId, group_data : objNode };
+        objNode.nodes.push(elNode);
+        data.nodes.push(elNode);
+        //data.links.push({ source : prev, target : elName, inner : true, value : 1, ordinal : 0 });
+        //prev = name+'['+el+']';
+      });
+      obj.edges.forEach(function (edge) {
+        var s = name+'['+obj.source.image(edge)+']';
+        var t = name+'['+obj.target.image(edge)+']';
+        //var elNode = { name : elName, label : el, group : groupId, group_data : objNode };
+        //objNode.nodes.push(elNode);
+        //data.nodes.push(elNode);
+        data.links.push({ source : s, target : t, element : true, value : 1, ordinal : 0 });
+        //prev = name+'['+el+']';
+      });
+    });
 
-    var morphismMap = model.morphismMap();
     var adjMatrix = {};
-    for (var src in morphismMap) {
-      if (has(morphismMap, src)) {
-        var dst = morphismMap[src];
-        var s = dst.dom;
-        var t = dst.codom;
-        if (!adjMatrix[s]) {
-          adjMatrix[s] = {};
-        }
-        if (!adjMatrix[t]) {
-          adjMatrix[t] = {};
-        }
-        adjMatrix[s][t] = (adjMatrix[s][t] + 1) || 1;
-        dst.target.dom().nodes.forEach(function (a) {
-          var b = dst.target.mapNode(a);
-          var s2 = dst.dom+'['+a+']';
-          var t2 = dst.codom+'['+b+']';
-          if (!adjMatrix[s2]) {
-            adjMatrix[s2] = {};
-          }
-          if (!adjMatrix[t2]) {
-            adjMatrix[t2] = {};
-          }
-          adjMatrix[s ][t2] = (adjMatrix[s ][t2] + 1) || 1;
-          adjMatrix[s2][t ] = (adjMatrix[s2][t ] + 1) || 1;
-          adjMatrix[s2][t2] = (adjMatrix[s2][t2] + 1) || 1;
-        });
+    model.dom().morphisms().forEach(function (name) {
+      var edge = {name: name, dom: model.dom().dom(name), codom: model.dom().codom(name)};
+      var dst = model.mapMorphism(name);
+      var s = edge.dom;
+      var t = edge.codom;
+      if (!adjMatrix[s]) {
+        adjMatrix[s] = {};
       }
-    }
+      if (!adjMatrix[t]) {
+        adjMatrix[t] = {};
+      }
+      adjMatrix[s][t] = (adjMatrix[s][t] + 1) || 1;
+      dst.dom().nodes.forEach(function (a) {
+        var b = dst.mapNode(a);
+        var s2 = s+'['+a+']';
+        var t2 = t+'['+b+']';
+        if (!adjMatrix[s2]) {
+          adjMatrix[s2] = {};
+        }
+        if (!adjMatrix[t2]) {
+          adjMatrix[t2] = {};
+        }
+        adjMatrix[s ][t2] = (adjMatrix[s ][t2] + 1) || 1;
+        adjMatrix[s2][t ] = (adjMatrix[s2][t ] + 1) || 1;
+        adjMatrix[s2][t2] = (adjMatrix[s2][t2] + 1) || 1;
+      });
+    });
+
     var ordMatrix = {};
-    //console.log(adjMatrix);
-    for (var name in morphismMap) {
-      if (has(morphismMap, name)) {
-        var dst = morphismMap[name];
-        var s = dst.dom;
-        var t = dst.codom;
+    model.dom().morphisms().forEach(function (name) {
+      var edge = {name: name, dom: model.dom().dom(name), codom: model.dom().codom(name)};
+      var dst = model.mapMorphism(name);
+      var s = edge.dom;
+      var t = edge.codom;
 
-        //console.log(s, t, ordinal);
+      //console.log(s, t, ordinal);
 
-        // Add the morphism
-        data.links.push({ name : name, label : name, source : s, target : t, morphism : true, value : 1, ordinal : calcOrdinal(adjMatrix, ordMatrix, s, t) });
-        // Add empty functions if needed
-        if (dst.target.dom().nodes.isEmpty() || dst.target.codom().nodes.isEmpty()) {
-          var sl = '_l_'+s;
-          var tl = '_l_'+t;
-          data.links.push({ name : name, label : name, source : sl, target : tl, empty : true, value : 1, ordinal : calcOrdinal(adjMatrix, ordMatrix, s, t) });
-          data.links.push({ name : name, label : name, source : s,  target : tl, empty : true, value : 1, ordinal : calcOrdinal(adjMatrix, ordMatrix, s, t) });
-          data.links.push({ name : name, label : name, source : sl, target : t,  empty : true, value : 1, ordinal : calcOrdinal(adjMatrix, ordMatrix, s, t) });
-        }
-        // Add elements of the function graph
-        dst.target.dom().nodes.forEach(function (a) {
-          var b = dst.target.mapNode(a);
-          var se = dst.dom+'['+a+']';
-          var te = dst.codom+'['+b+']';
-          data.links.push({ name : name, label : name, source : se, target : te, value : 1, ordinal : calcOrdinal(adjMatrix, ordMatrix, se, te) });
-          data.links.push({ name : name, label : name, source : s,  target : te, value : 1, ordinal : calcOrdinal(adjMatrix, ordMatrix, s,  te) });
-          data.links.push({ name : name, label : name, source : se, target : t,  value : 1, ordinal : calcOrdinal(adjMatrix, ordMatrix, se, t) });
-        });
+      // Add the morphism
+      data.links.push({ name : name, label : name, source : s, target : t, morphism : true, value : 1, ordinal : calcOrdinal(adjMatrix, ordMatrix, s, t) });
+      // Add empty functions if needed
+      if (dst.dom().nodes.isEmpty() || dst.codom().nodes.isEmpty()) {
+        var sl = '_l_'+s;
+        var tl = '_l_'+t;
+        data.links.push({ name : name, label : name, source : sl, target : tl, empty : true, value : 1, ordinal : calcOrdinal(adjMatrix, ordMatrix, s, t) });
+        data.links.push({ name : name, label : name, source : s,  target : tl, empty : true, value : 1, ordinal : calcOrdinal(adjMatrix, ordMatrix, s, t) });
+        data.links.push({ name : name, label : name, source : sl, target : t,  empty : true, value : 1, ordinal : calcOrdinal(adjMatrix, ordMatrix, s, t) });
       }
-    }
-//console.log(data);
-
+      // Add elements of the function graph
+      dst.dom().nodes.forEach(function (a) {
+        var b = dst.mapNode(a);
+        var se = s+'['+a+']';
+        var te = t+'['+b+']';
+        data.links.push({ name : name, label : name, source : se, target : te, value : 1, ordinal : calcOrdinal(adjMatrix, ordMatrix, se, te) });
+        data.links.push({ name : name, label : name, source : s,  target : te, value : 1, ordinal : calcOrdinal(adjMatrix, ordMatrix, s,  te) });
+        data.links.push({ name : name, label : name, source : se, target : t,  value : 1, ordinal : calcOrdinal(adjMatrix, ordMatrix, se, t) });
+      });
+    });
+cl(data);
     hullg = vis.append("g").attr("class", "hulls");
     linkg = vis.append("g").attr("class", "links");
     nodeg = vis.append("g").attr("class", "nodes");
@@ -536,18 +526,20 @@ function showGraphCategoryView(viewId, category, objects, morphisms) {
 }
 */
 function showGraphCategoryView(viewId, category, objects, morphisms) {
-  var diagram = new Diagram(category);
+  var mapObject = [];
   for (var name in objects) {
     if (has(objects, name)) {
-      diagram.mapObject(name, objects[name]);
+      mapObject.push([name, objects[name]]);
     }
   }
+  var mapMorphism = [];
   for (var name in morphisms) {
     if (has(morphisms, name)) {
       var morphism = morphisms[name];
-      diagram.mapMorphism({name: name, dom: morphism.dom, codom: morphism.codom}, morphism.morphism);
+      mapMorphism.push([name, morphism.dom, morphism.codom, morphism.morphism]);
     }
   }
+  var diagram = new Diagram(category, mapObject, mapMorphism);
   var view = new GraphCategoryView(diagram);
   view.bind(d3.select('#' + viewId));
   view.start();

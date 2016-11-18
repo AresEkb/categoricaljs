@@ -4,6 +4,9 @@
 // Functor
 
 function Functor(C, D, mapObject, mapMorphism) {
+  assert(!isUndefined(mapObject), 'The mapObject argument is required for Functor');
+  assert(!isUndefined(mapMorphism), 'The mapMorphism argument is required for Functor');
+  assert(typeof mapMorphism == 'function', 'The mapMorphism argument must be a Function');
   assert(typeof mapObject == 'function', 'The mapObject argument must be a Function');
   assert(typeof mapMorphism == 'function', 'The mapMorphism argument must be a Function');
   Functor.base.constructor.call(this, C, D);
@@ -27,14 +30,13 @@ extend(Functor, Morphism);
 Functor.prototype.compose = function (F) {
   var G = this;
   assertEqualObjects(F.codom(), G.dom());
-  var func = new Functor(F.dom(), G.codom());
-  func.mapObject = function (A) {
+  var mapObject = function (A) {
     return G.mapObject(F.mapObject(A));
   };
-  func.mapMorphism = function (f) {
+  var mapMorphism = function (f) {
     return G.mapMorphism(F.mapMorphism(f));
   };
-  return func;
+  return new Functor(F.dom(), G.codom(), mapObject, mapMorphism);
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -90,12 +92,12 @@ extend(DiagonalFunctor, Functor);
 
 function CrossProductFunctor(C) {
   var mapObject = function (A) {
-    return this.dom().product(A, A).obj;
+    return C.product(A, A).apex();
   };
   var mapMorphism = function (f) {
-    var pa = this.dom().product(f.dom(), f.dom());
-    var pb = this.dom().product(f.codom(), f.codom());
-    return pb.univ(f.compose(pa.f), f.compose(pa.g));
+    var pa = C.product(f.dom(), f.dom());
+    var pb = C.product(f.codom(), f.codom());
+    return pb.univ(f.compose(pa.component('A')), f.compose(pa.component('B'))).morphism();
   };
   CrossProductFunctor.base.constructor.call(this, C, C, mapObject, mapMorphism);
 }
