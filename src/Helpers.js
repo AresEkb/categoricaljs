@@ -1,9 +1,21 @@
 'use strict';
 
+var cl = console.log;
+
 function assert(condition, message) {
   if (!condition) {
     throw message || 'Assertion failed';
   }
+}
+
+function assertHasObject(cat, A) {
+  assert(cat.hasObject(A),
+    'The category ' + cat + ' doesn\'t has the object ' + A);
+}
+
+function assertHasMorphism(cat, f) {
+  assert(cat.hasMorphism(f),
+    'The category ' + cat + ' doesn\'t has the morphism ' + f);
 }
 
 function assertEqualObjects(A, B) {
@@ -21,6 +33,11 @@ function assertEqualCodom(f, g) {
     'The following morphisms must have the same codomain:\n' + f + ' and\n' + g);
 }
 
+function assertComposable(f, g) {
+  assert(f.codom().equals(g.dom()),
+    'The codomain of the first morphism must be equal to the domain of the second morphism:\n' + f + ' and\n' + g);
+}
+
 function assertParallel(f, g) {
   assert(f.dom().equals(g.dom()) && f.codom().equals(g.codom()),
     'The following morphisms must be parallel:\n' + f + ' and\n' + g);
@@ -29,6 +46,10 @@ function assertParallel(f, g) {
 function assertCommutes(f, g) {
   assert(f.commutes(g),
     'The following morphisms must commute:\n' + f + ' and\n' + g);
+}
+
+function assertDiagramCommutes(diagram) {
+  throwNotImplemented();
 }
 
 function throwNotImplemented() {
@@ -41,6 +62,10 @@ function coalesce(x, def) { return isUndefined(x) ? def : x; }
 
 function has(obj, prop) {
   return Object.prototype.hasOwnProperty.call(obj, prop);// && obj[prop];
+}
+
+function mapToString(map) {
+  return Array.from(map).map(function (pair) { return pair[0] + ' = ' + pair[1]; }).join('\n');
 }
 
 // Based on
@@ -156,8 +181,8 @@ function hashCode(obj) {
       return 'string{' + obj + '}';
     case 'object':
       return 'object{' + getObjectID(obj) + '}';
-    default:
-      throw new Error('Supported only numbers, strings and objects. \'' + typeof obj + '\' is not supported.');
+    //default:
+    //  throw new Error('Supported only numbers, strings and objects. \'' + typeof obj + '\' is not supported.');
   }
 }
 

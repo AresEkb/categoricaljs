@@ -1,15 +1,6 @@
 'use strict';
 
-function NaturalTransformation(F, G) {
-  NaturalTransformation.base.constructor.call(this, F, G);
-  assert(F.dom().equals(G.dom()) && F.codom().equals(G.codom()));
-  this.F = function () { return F; }
-  this.G = function () { return G; }
-  this.eta = function (A, B) { return F.codom().morphism(F.objectImage(A), G.objectImage(B)); };
-}
-
-extend(NaturalTransformation, Morphism);
-
+/*
 NaturalTransformation.prototype.calculate = function (A) {
   this.eta = this.F.codom().morphism(F.objectImage(A), G.objectImage(A));
   this.univ = function (f) {
@@ -19,7 +10,7 @@ NaturalTransformation.prototype.calculate = function (A) {
     return eta;
   };
 };
-
+*/
 /*
 function Category() {
 }
@@ -80,6 +71,11 @@ FreeQuiver.prototype.object = function (name) {
   throw 'Free Quiver Category doesn\'t contain object ' + name;
 }
 
+FreeQuiver.prototype.hasObject = function (name) {
+console.log(name);
+  return name === 0 || name === 1;
+}
+
 FreeQuiver.prototype.morphism = function (name) {
   if (name === 's' || name === 't') {
     return { dom : function () { return 0; }, codom : function () { return 1; } }
@@ -123,22 +119,21 @@ function Quiver() {
 extend(Quiver, Functor);
 
 Quiver.prototype.mapObject = function (A, target) {
-  assert(target instanceof Set);
   if (!isUndefined(target)) {
+    assert(this.codom().hasObject(target));
     this._objectMap[A] = target;
+    return target;
   }
   return this._objectMap[A];
 };
 
 Quiver.prototype.mapMorphism = function (f, target) {
-  assert(target instanceof TotalFunction);
   if (!isUndefined(target)) {
-    if (isUndefined(this._morphismMap[f.name])) {
-      this._morphismMap[f.name] = f;
-    }
-    this._morphismMap[f.name].target = target;
+    assert(this.codom().hasMorphism(target));
+    this._morphismMap[f] = target;
+    return target;
   }
-  return this._morphismMap[f.name].target;
+  return this._morphismMap[f];
 };
 
 
@@ -165,11 +160,11 @@ function Quiv(cat) {
 extend(Quiv, FunctorCategory);
 
 Quiv.prototype.object = function () {
-  return new Quiver(this.target);
+  return new Quiver(this._target);
 };
 
 Quiv.prototype.morphism = function (A, B) {
-  return new NaturalTransformation();
+  return new NaturalTransformation(A, B);
 };
 
 var intervalCat = new IntervalCategory();
@@ -178,18 +173,23 @@ var setCat = new SetCategory();
 var graphCat = new Quiv(setCat);
 
 var graphA = graphCat.object();
-graphA.E = setCat.object([1]);
-graphA.V = setCat.object([1,2]);
-graphA.s = setCat.morphism(graphA.E, graphA.V, {1: 1});
-graphA.t = setCat.morphism(graphA.E, graphA.V, {1: 2});
+graphA.mapObject(0, setCat.object([1]));
+graphA.mapObject(1, setCat.object([1,2]));
+graphA.mapMorphism('s', setCat.morphism(graphA.mapObject(0), graphA.mapObject(1), {1: 1}));
+graphA.mapMorphism('t', setCat.morphism(graphA.mapObject(0), graphA.mapObject(1), {1: 2}));
+
+console.log(graphA);
 
 var graphB = graphCat.object();
-graphB.E = setCat.object([1,2,3,4,5]);
-graphB.V = setCat.object([1,2,3,4]);
-graphB.s = setCat.morphism(graphB.E, graphB.V, {1: 1, 2: 2, 3: 3, 4: 1, 5: 3});
-graphB.t = setCat.morphism(graphB.E, graphB.V, {1: 2, 2: 4, 3: 4, 4: 3, 5: 1});
+graphB.mapObject(0, setCat.object([1,2,3,4,5]));
+graphB.mapObject(1, setCat.object([1,2,3,4]));
+graphB.mapMorphism('s', setCat.morphism(graphB.mapObject(0), graphB.mapObject(1), {1: 1, 2: 2, 3: 3, 4: 1, 5: 3}));
+graphB.mapMorphism('t', setCat.morphism(graphB.mapObject(0), graphB.mapObject(1), {1: 2, 2: 4, 3: 4, 4: 3, 5: 1}));
 
-var fEdgeMap = setCat.morphism(graphA.E, graphB.E, {1: 1});
-var fNodeMap = setCat.morphism(graphA.V, graphB.V, {1: 1, 2: 2});
+var fEdgeMap = setCat.morphism(graphA.mapObject(0), graphB.mapObject(0), {1: 1});
+var fNodeMap = setCat.morphism(graphA.mapObject(1), graphB.mapObject(1), {1: 1, 2: 2});
 var f = graphCat.morphism(graphA, graphB);
+f.mapObject(0, fEdgeMap);
+f.mapObject(1, fNodeMap);
 
+console.log(f);

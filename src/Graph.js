@@ -177,6 +177,7 @@ function GraphMorphism(graphA, graphB, nodeMap, edgeMap) {
 extend(GraphMorphism, Morphism);
 
 // TODO: It must be called after any changes
+// Use Object.observe?
 GraphMorphism.prototype.check = function () {
   assertCommutes(this._nodeMap.compose(this.dom().source), this.codom().source.compose(this._edgeMap));
   assertCommutes(this._nodeMap.compose(this.dom().target), this.codom().target.compose(this._edgeMap));

@@ -27,32 +27,40 @@ SetCategory.prototype.compose = function (g, f) {
   return g.compose(f);
 };
 
+SetCategory.prototype.hasObject = function (A) {
+  return A instanceof Set;
+};
+
+SetCategory.prototype.hasMorphism = function (f) {
+  return f instanceof TotalFunction;
+};
+
 SetCategory.prototype.terminal = function () {
-  return new SetTerminalObject(this).calculate();
+  return new SetTerminalObject(this);
 };
 
 SetCategory.prototype.initial = function () {
-  return new SetInitialObject(this).calculate();
+  return new SetInitialObject(this);
 };
 
 SetCategory.prototype.product = function (A, B) {
-  return new SetProduct(this).calculate(A, B);
+  return new SetProduct(this, A, B);
 };
 
 SetCategory.prototype.coproduct = function (A, B) {
-  return new SetCoproduct(this).calculate(A, B);
+  return new SetCoproduct(this, A, B);
 };
 
 SetCategory.prototype.coproductComplement = function (f) {
-  return new SetCoproduct(this).complement(f);
+  return new SetCoproductComplement(this, f);
 };
 
 SetCategory.prototype.equalizer = function (f, g) {
-  return new SetEqualizer(this).calculate(f, g);
+  return new SetEqualizer(this, f, g);
 };
 
 SetCategory.prototype.coequalizer = function (f, g) {
-  return new SetCoequalizer(this).calculate(f, g);
+  return new SetCoequalizer(this, f, g);
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -159,6 +167,9 @@ Set.prototype.hasIntersectionWith = function (s) {
 };
 
 Set.prototype.equals = function (s) {
+  if (!(s instanceof Set)) {
+    return false;
+  }
   var elements1 = this.elements();
   var elements2 = s.elements();
   if (elements1.length != elements2.length) return false;
@@ -354,8 +365,7 @@ TotalFunction.prototype.push = function (source, target) {
 };
 
 TotalFunction.prototype.compose = function (f) {
-  assert(this.dom().equals(f.codom()),
-    'The first morphism\' dom must be equal to the second morphism\' codom');
+  assertComposable(f, this);
   var h = new TotalFunction(f.dom(), this.codom());
   for (var prop in f._mapping) {
     if (has(f._mapping, prop)) {
@@ -409,7 +419,7 @@ TotalFunction.prototype.decomposeToEM = function () {
   return {'e': e, 'm': m};
 };
 
-TotalFunction.prototype.commutes = function(f) {
+TotalFunction.prototype.commutes = function (f) {
   assert(this.dom().equals(f.dom()) && this.codom().equals(f.codom()),
     'Morphisms must has the same domain and codomain');
   assert(this.isTotal() && f.isTotal(),
@@ -484,237 +494,295 @@ TotalFunction.prototype.toString = function () {
 // SetTerminalObject
 
 function SetTerminalObject(cat) {
-  this.cat = function () { return cat; };
+  var diagram = new Diagram(cat);
+  var apex = new Set([1]);
+  var components = new Map();
+  SetTerminalObject.base.constructor.call(this, diagram, apex, components);
 }
 
-SetTerminalObject.prototype.calculate = function () {
-  this.obj = new Set([1]);
-  return this;
-}
+extend(SetTerminalObject, LimitingCone);
 
 SetTerminalObject.prototype.univ = function (A) {
   var mapping = {};
   A.forEach(function (el) {
     mapping[el] = 1;
   });
-  return this.cat().morphism(A, this.obj, mapping);
+  return this.cat().morphism(A, this.apex(), mapping);
 }
-
-SetTerminalObject.prototype.toString = function () {
-  return this.obj.toString();
-};
 
 /////////////////////////////////////////////////////////////////////////////
 // SetInitialObject
 
 function SetInitialObject(cat) {
-  this.cat = function () { return cat; };
+  var diagram = new Diagram(cat);
+  var apex = new Set();
+  var components = new Map();
+  SetInitialObject.base.constructor.call(this, diagram, apex, components);
 }
 
-SetInitialObject.prototype.calculate = function () {
-  this.obj = new Set();
-  return this;
-}
+extend(SetInitialObject, ColimitingCocone);
 
 SetInitialObject.prototype.univ = function (A) {
-  return this.cat().morphism(this.obj, A, {});
+  return this.cat().morphism(this.apex(), A, {});
 }
-
-SetInitialObject.prototype.toString = function () {
-  return this.obj.toString();
-};
 
 /////////////////////////////////////////////////////////////////////////////
 // SetProduct
 
-function SetProduct(cat) {
-  this.cat = function () { return cat; };
-}
+function SetProduct(cat, A, B) {
+  assert(cat.hasObject(A));
+  assert(cat.hasObject(B));
 
-SetProduct.prototype.calculate = function (A, B) {
-  var obj = new Set();
+  var diagram = new Diagram(cat, [['A',A],['B',B]]);
+
+  var apex = new Set();
   var mapping1 = {};
   var mapping2 = {};
   A.forEach(function (x) {
     B.forEach(function (y) {
       var z = [x, y].toString();
-      obj.add(z);
+      apex.add(z);
       mapping1[z] = x;
       mapping2[z] = y;
     });
   });
-  this.obj = obj;
-  this.f = this.cat().morphism(this.obj, A, mapping1);
-  this.g = this.cat().morphism(this.obj, B, mapping2);
-  return this;
-};
 
-SetProduct.prototype.univ = function(m, n) {
+  var sides = new Map();
+  sides.set('A', cat.morphism(apex, A, mapping1));
+  sides.set('B', cat.morphism(apex, B, mapping2));
+
+  SetProduct.base.constructor.call(this, diagram, apex, sides);
+}
+
+extend(SetProduct, LimitingCone);
+
+SetProduct.prototype.univ = function (m, n) {
   assertEqualDom(m, n);
-  assertEqualCodom(this.f, m);
-  assertEqualCodom(this.g, n);
   var obj = m.dom();
+  var f = this.component('A');
+  var g = this.component('B');
   var mapping = {};
   obj.forEach(function (x) {
-    var s1 = this.f.preimage(m.image(x));
-    var s2 = this.g.preimage(n.image(x));
+    var s1 = f.preimage(m.image(x));
+    var s2 = g.preimage(n.image(x));
     mapping[x] = s1.intersection(s2).representative();
   }.bind(this));
-  var u = this.cat().morphism(obj, this.obj, mapping);
-  assertCommutes(this.f.compose(u), m);
-  assertCommutes(this.g.compose(u), n);
+  var u = this.cat().morphism(obj, this.apex(), mapping);
+  assertCommutes(f.compose(u), m);
+  assertCommutes(g.compose(u), n);
   return u;
-};
-
-SetProduct.prototype.toString = function () {
-  return '<AxB: ' + this.obj + ', f: ' + this.f + ', g: ' + this.g + '>';
 };
 
 /////////////////////////////////////////////////////////////////////////////
 // SetCoproduct
 
-function SetCoproduct(cat) {
-  this.cat = function () { return cat; };
-}
+function SetCoproduct(cat, A, B) {
+  assertHasObject(cat, A);
+  assertHasObject(cat, B);
 
-SetCoproduct.prototype.calculate = function (A, B) {
-  this.obj = new Set();
+  var diagram = new Diagram(cat, [['A',A],['B',B]]);
+
+  var apex = new Set();
   var elementCount = 1;
   function createInjection(set, obj) {
     var mapping = {};
     set.forEach(function (x) {
-      obj.add(elementCount);
+      apex.add(elementCount);
       mapping[x] = elementCount;
       elementCount++;
     });
     return mapping;
   }
-  this.f = this.cat().morphism(A, this.obj, createInjection(A, this.obj));
-  this.g = this.cat().morphism(B, this.obj, createInjection(B, this.obj));
-  return this;
-};
 
-SetCoproduct.prototype.complement = function (f) {
-  this.obj = f.codom();
-  this.f = f;
-  this.g = this.cat().morphism(f.codom().diff(f.image()), this.obj).initId();
-  return this;
-};
+  var sides = new Map();
+  sides.set('A', cat.morphism(A, apex, createInjection(A, apex)));
+  sides.set('B', cat.morphism(B, apex, createInjection(B, apex)));
 
-SetCoproduct.prototype.univ = function(m, n) {
+  SetCoproduct.base.constructor.call(this, diagram, apex, sides);
+}
+
+extend(SetCoproduct, ColimitingCocone);
+
+SetCoproduct.prototype.univ = function (m, n) {
   assertEqualCodom(m, n);
-  assertEqualDom(this.f, m);
-  assertEqualDom(this.g, n);
+  var f = this.component('A');
+  var g = this.component('B');
+  assertEqualDom(f, m);
+  assertEqualDom(g, n);
   var obj = m.codom();
   var mapping = {};
-  function addMappings(f, h) {
+  function addMappings(f2, h) {
     h.dom().forEach(function (x) {
-      mapping[f.image(x)] = h.image(x);
+      mapping[f2.image(x)] = h.image(x);
     });
   }
-  addMappings(this.f, m);
-  addMappings(this.g, n);
-  var u = this.cat().morphism(this.obj, obj, mapping);
-  assertCommutes(u.compose(this.f), m);
-  assertCommutes(u.compose(this.g), n);
+  addMappings(f, m);
+  addMappings(g, n);
+  var u = this.cat().morphism(this.apex(), obj, mapping);
+  assertCommutes(u.compose(f), m);
+  assertCommutes(u.compose(g), n);
   return u;
 };
 
-SetCoproduct.prototype.toString = function () {
-  return '<A+B: ' + this.obj + ', f: ' + this.f + ', g: ' + this.g + '>';
-};
+/////////////////////////////////////////////////////////////////////////////
+// SetCoproductComplement
+
+function SetCoproductComplement(cat, f) {
+  assertHasMorphism(cat, f);
+
+  var apex = f.codom();
+  var A = f.dom();
+  var B = apex.diff(f.image());
+  var g = cat.morphism(B, apex).initId();
+
+  var diagram = new Diagram(cat, [['A',A],['B',B]]);
+
+  var components = new Map();
+  components.set('A', f);
+  components.set('B', g);
+
+  // It's not an error, we call the base constructor of the base here
+  SetCoproduct.base.constructor.call(this, diagram, apex, components);
+
+  this.complement = function () { return B; }
+}
+
+extend(SetCoproductComplement, SetCoproduct);
 
 /////////////////////////////////////////////////////////////////////////////
 // SetEqualizer
 
-function SetEqualizer(cat) {
-  this.cat = function () { return cat; };
-}
-
-SetEqualizer.prototype.calculate = function (f, g) {
+function SetEqualizer(cat, f, g) {
+  assertHasMorphism(cat, f);
+  assertHasMorphism(cat, g);
   assertParallel(f, g);
 
-  this.f = function () { return f };
-  this.g = function () { return g };
+  var A = f.dom();
+  var B = f.codom();
 
-  var dom = new Set();
+  var diagram = new Diagram(cat, [['A',A],['B',B]],
+    [['f','A','B',f],
+     ['g','A','B',g]]);
+
+  var obj = new Set();
   var codom = f.dom();
-  this.q = this.cat().morphism(dom, codom);
+  var q = cat.morphism(obj, codom);
   f.dom().forEach(function (x) {
     if (f.image(x) == g.image(x)) {
-      dom.add(x);
-      this.q.push(x, x);
+      obj.add(x);
+      q.push(x, x);
     }
   }.bind(this));
 
-  this.obj = this.q.dom();
+  var fq = f.compose(q);
+  var gq = f.compose(q);
 
-  assertCommutes(f.compose(this.q), g.compose(this.q));
-  return this;
+  assertCommutes(fq, gq);
+
+  var map = new Map();
+  map.set('A', q);
+  map.set('B', fq);
+
+  SetEqualizer.base.constructor.call(this, diagram, obj, map);
 }
 
+extend(SetEqualizer, LimitingCone);
+
 SetEqualizer.prototype.univ = function (m) {
-  assertEqualCodom(this.q, m);
-  assertCommutes(this.f().compose(m), this.g().compose(m));
+  assertHasMorphism(this.cat(), m);
+  var q = this.component('A');
+  assertEqualCodom(q, m);
+
+  var morphisms = [];
+  this.diagram().dom().morphisms().forEach(function (edge) {
+    var morphism = this.diagram().mapMorphism(edge);
+    morphisms.push(morphism.compose(m));
+  }.bind(this));
+  for (var i = 0; i < morphisms.length; i++) {
+    for (var j = i; j < morphisms.length; j++) {
+      assertCommutes(morphisms[i], morphisms[j]);
+    }
+  }
+
   var mapping = {};
   m.forEach(function (x, y) {
-    mapping[x] = this.q.preimage(y).representative();
+    mapping[x] = q.preimage(y).representative();
   }.bind(this));
-  var u = this.cat().morphism(m.dom(), this.obj, mapping);
-  assertCommutes(this.q.compose(u), m);
+  var u = this.cat().morphism(m.dom(), this.apex(), mapping);
+  assertCommutes(q.compose(u), m);
   return u;
-};
-
-SetEqualizer.prototype.toString = function () {
-  return '<Obj: ' + this.obj + ', f: ' + this.q + '>';
 };
 
 /////////////////////////////////////////////////////////////////////////////
 // SetCoequalizer
 
-function SetCoequalizer(cat) {
-  this.cat = function () { return cat; };
-}
-
-SetCoequalizer.prototype.calculate = function (f, g) {
+function SetCoequalizer(cat, f, g) {
+  assertHasMorphism(cat, f);
+  assertHasMorphism(cat, g);
   assertParallel(f, g);
 
-  this.f = function () { return f };
-  this.g = function () { return g };
+  var A = f.dom();
+  var B = f.codom();
+
+  var diagram = new Diagram(cat, [['A',A],['B',B]],
+    [['f','A','B',f],
+     ['g','A','B',g]]);
 
   var dom = f.codom();
-  var codom = new Set();
+  var obj = new Set();
   var eq = {};
   f.dom().forEach(function (x) {
     var fx = f.image(x);
     var gx = g.image(x);
     eq[fx] = eq[gx] = has(eq, fx) ? eq[fx] : has(eq, gx) ? eq[gx] : fx;
   });
-  this.q = this.cat().morphism(dom, codom);
+  var q = cat.morphism(dom, obj);
   dom.forEach(function (s) {
     var t = eq[s] || s;
-    codom.add(t);
-    this.q.push(s, t);
-  }.bind(this));
+    obj.add(t);
+    q.push(s, t);
+  });
 
-  this.obj = this.q.codom();
+  assertCommutes(q.compose(f), q.compose(g));
 
-  assertCommutes(this.q.compose(f), this.q.compose(g));
-  return this;
+  var map = new Map();
+  map.set('A', q.compose(f));
+  map.set('B', q);
+
+  SetCoequalizer.base.constructor.call(this, diagram, obj, map);
+
+  //this.object = function () { return obj; }
+  //this.morphism = function (A) { return map.get(A); }
 }
 
+extend(SetCoequalizer, ColimitingCocone);
+
 SetCoequalizer.prototype.univ = function (m) {
-  assertEqualDom(this.q, m);
-  assertCommutes(m.compose(this.f()), m.compose(this.g()));
+  assertHasMorphism(this.cat(), m);
+  var q = this.component('B');
+  assertEqualDom(q, m);
+
+  // TODO: Equalizers and Coequalizers has the same diagrams,
+  // so commutativity check is the same too. The following code
+  // must be moved somewhere.
+  // Note, that composition order is different.
+  // Partly the checks must be moved to Cone (NaturalTransformation)
+  var morphisms = [];
+  this.diagram().dom().morphisms().forEach(function (edge) {
+    var morphism = this.diagram().mapMorphism(edge);
+    morphisms.push(m.compose(morphism));
+  }.bind(this));
+  for (var i = 0; i < morphisms.length; i++) {
+    for (var j = i; j < morphisms.length; j++) {
+      assertCommutes(morphisms[i], morphisms[j]);
+    }
+  }
+
   var mapping = {};
   m.dom().forEach(function (x) {
-    mapping[this.q.image(x)] = m.image(x);
+    mapping[q.image(x)] = m.image(x);
   }.bind(this));
-  var u = this.cat().morphism(this.q.codom(), m.codom(), mapping);
-  assertCommutes(u.compose(this.q), m);
+  var u = this.cat().morphism(q.codom(), m.codom(), mapping);
+  assertCommutes(u.compose(q), m);
   return u;
-};
-
-SetCoequalizer.prototype.toString = function () {
-  return '<Obj: ' + this.obj + ', f: ' + this.q + '>';
 };
