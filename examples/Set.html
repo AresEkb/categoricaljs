@@ -172,7 +172,7 @@ showSetCategoryView('diagram21', setCat, {'X': obj1234, 'Y': objABCDEF, 'Q': coe
    'g': {dom: 'X', codom: 'Y', morphism: g21},
    'q': {dom: 'Y', codom: 'Q', morphism: coeq21.component('B')},
    'm': {dom: 'Y', codom: 'O', morphism: m21},
-   'u': {dom: 'Q', codom: 'O', morphism: coeq21.univ(m21)}});
+   'u': {dom: 'Q', codom: 'O', morphism: coeq21.univ(m21).morphism()}});
 
 showSetCategoryView('diagram22', setCat, {'X1': obj1234, 'X2': obj1234, 'Y': objABCDEF, 'Q': coeq21.apex()},
   {'f': {dom: 'X1', codom: 'Y', morphism: f21},
@@ -191,7 +191,7 @@ showSetCategoryView('diagram23', setCat, {'X': obj1234, 'Y': obj12345, 'Z': objA
    'q': {dom: 'P', codom: 'Y', morphism: pb23.component('B')},
    'm': {dom: 'Q', codom: 'X', morphism: m23},
    'n': {dom: 'Q', codom: 'Y', morphism: n23},
-   'u': {dom: 'Q', codom: 'P', morphism: pb23.univ(m23, n23)}});
+   'u': {dom: 'Q', codom: 'P', morphism: pb23.univ(m23, n23).morphism()}});
 showSetCategoryView('diagram24', setCat, {'X': obj1234, 'Y': obj12345, 'Z': objABC, 'P': pb23.apex()},
   {'f': {dom: 'X', codom: 'Z', morphism: f23},
    'g': {dom: 'Y', codom: 'Z', morphism: g23},
@@ -219,7 +219,7 @@ showSetCategoryView('diagram26', setCat, {'X': objABC, 'Y': objABCD, 'Z': obj123
    'q': {dom: 'Y', codom: 'P', morphism: po26.component('B')},
    'm': {dom: 'X', codom: 'Q', morphism: m26},
    'n': {dom: 'Y', codom: 'Q', morphism: n26},
-   'u': {dom: 'P', codom: 'Q', morphism: po26.univ(m26, n26)}});
+   'u': {dom: 'P', codom: 'Q', morphism: po26.univ(m26, n26).morphism()}});
 
 showSetCategoryView('diagram27', setCat, {'X': objABC, 'Y': objABCD, 'Z': obj123, 'P': po26.apex()},
   {'f': {dom: 'Z', codom: 'X', morphism: f26},

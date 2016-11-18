@@ -200,15 +200,16 @@ function Pullback(cat, f, g) {
 extend(Pullback, LimitingCone);
 
 Pullback.prototype.univ = function (m, n) {
-  assertEqualDom(m, n);
-  var p = this.component('A');
-  var q = this.component('B');
-  assertEqualCodom(m, p);
-  assertEqualCodom(n, q);
+  var apex = m.dom();
+  // TODO: I guess missing components must be calculated automatically?
+  var edge = this.diagram().dom().anyMorphism('A', 'C');
+  var f = this.diagram().mapMorphism(edge);
+  var component = new Map([['A',m],['B',n],['C',f.compose(m)]]);
+  var cone = new LimitingCone(this.diagram(), apex, component);
+
   var u = this.equalizer().univ(this.product().univ(m, n).morphism()).morphism();
-  assertCommutes(p.compose(u), m);
-  assertCommutes(q.compose(u), n);
-  return u;
+
+  return new ConeMorphism(cone, this, u);
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -290,17 +291,16 @@ Pushout.prototype.complement = function (f, p) {
 }
 
 Pushout.prototype.univ = function (m, n) {
-  assertHasMorphism(this.cat(), m);
-  assertHasMorphism(this.cat(), n);
-  var p = this.component('A');
-  var q = this.component('B');
-  assertEqualCodom(m, n);
-  assertEqualDom(m, p);
-  assertEqualDom(n, q);
-  var u = this.coequalizer().univ(this.coproduct().univ(m, n).morphism());
-  assertCommutes(u.compose(p), m);
-  assertCommutes(u.compose(q), n);
-  return u;
+  var apex = m.codom();
+  // TODO: I guess missing components must be calculated automatically?
+  var edge = this.diagram().dom().anyMorphism('C', 'A');
+  var f = this.diagram().mapMorphism(edge);
+  var component = new Map([['A',m],['B',n],['C',m.compose(f)]]);
+  var cone = new ColimitingCocone(this.diagram(), apex, component);
+
+  var u = this.coequalizer().univ(this.coproduct().univ(m, n).morphism()).morphism();
+
+  return new CoconeMorphism(this, cone, u);
 };
 
 /////////////////////////////////////////////////////////////////////////////

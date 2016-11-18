@@ -557,10 +557,9 @@ function SetProduct(cat, A, B) {
       mapping2[z] = y;
     });
   });
-
-  var component = new Map();
-  component.set('A', new TotalFunction(apex, A, mapping1));
-  component.set('B', new TotalFunction(apex, B, mapping2));
+  var pA = new TotalFunction(apex, A, mapping1);
+  var pB = new TotalFunction(apex, B, mapping2);
+  var component = new Map([['A',pA],['B',pB]]);
 
   SetProduct.base.constructor.call(this, diagram, apex, component);
 }
@@ -602,10 +601,9 @@ function SetCoproduct(cat, A, B) {
     });
     return mapping;
   }
-
-  var component = new Map();
-  component.set('A', new TotalFunction(A, apex, createInjection(A, apex)));
-  component.set('B', new TotalFunction(B, apex, createInjection(B, apex)));
+  var iA = new TotalFunction(A, apex, createInjection(A, apex));
+  var iB = new TotalFunction(B, apex, createInjection(B, apex));
+  var component = new Map([['A',iA],['B',iB]]);
 
   SetCoproduct.base.constructor.call(this, diagram, apex, component);
 }
@@ -665,7 +663,6 @@ extend(SetCoproductComplement, SetCoproduct);
 function SetEqualizer(cat, f, g) {
   var A = f.dom();
   var B = f.codom();
-
   var diagram = new Diagram(cat, [['A',A],['B',B]],
     [['f','A','B',f],
      ['g','A','B',g]]);
@@ -678,11 +675,8 @@ function SetEqualizer(cat, f, g) {
       apex.add(x);
       q.push(x, x);
     }
-  }.bind(this));
-
-  var component = new Map();
-  component.set('A', q);
-  component.set('B', f.compose(q));
+  });
+  var component = new Map([['A',q],['B',f.compose(q)]]);
 
   SetEqualizer.base.constructor.call(this, diagram, apex, component);
 }
@@ -691,32 +685,18 @@ extend(SetEqualizer, LimitingCone);
 
 SetEqualizer.prototype.univ = function (m) {
   var apex = m.dom();
+  // TODO: I guess missing components must be calculated automatically?
   var edge = this.diagram().dom().anyMorphism('A', 'B');
   var f = this.diagram().mapMorphism(edge);
   var component = new Map([['A',m],['B',f.compose(m)]]);
   var cone = new LimitingCone(this.diagram(), apex, component);
 
-  assertHasMorphism(this.cat(), m);
   var q = this.component('A');
-  assertEqualCodom(q, m);
-
-  var morphisms = [];
-  this.diagram().dom().morphisms().forEach(function (edge) {
-    var morphism = this.diagram().mapMorphism(edge);
-    morphisms.push(morphism.compose(m));
-  }.bind(this));
-  for (var i = 0; i < morphisms.length; i++) {
-    for (var j = i; j < morphisms.length; j++) {
-      assertCommutes(morphisms[i], morphisms[j]);
-    }
-  }
-
   var mapping = {};
   m.forEach(function (x, y) {
     mapping[x] = q.preimage(y).representative();
-  }.bind(this));
-  var u = new TotalFunction(m.dom(), this.apex(), mapping);
-  assertCommutes(q.compose(u), m);
+  });
+  var u = new TotalFunction(apex, this.apex(), mapping);
 
   return new ConeMorphism(cone, this, u);
 };
@@ -727,7 +707,6 @@ SetEqualizer.prototype.univ = function (m) {
 function SetCoequalizer(cat, f, g) {
   var A = f.dom();
   var B = f.codom();
-
   var diagram = new Diagram(cat, [['A',A],['B',B]],
     [['f','A','B',f],
      ['g','A','B',g]]);
@@ -746,10 +725,7 @@ function SetCoequalizer(cat, f, g) {
     apex.add(t);
     q.push(s, t);
   });
-
-  var component = new Map();
-  component.set('A', q.compose(f));
-  component.set('B', q);
+  var component = new Map([['A',q.compose(f)],['B',q]]);
 
   SetCoequalizer.base.constructor.call(this, diagram, apex, component);
 }
@@ -757,31 +733,19 @@ function SetCoequalizer(cat, f, g) {
 extend(SetCoequalizer, ColimitingCocone);
 
 SetCoequalizer.prototype.univ = function (m) {
-  assertHasMorphism(this.cat(), m);
+  var apex = m.codom();
+  // TODO: I guess missing components must be calculated automatically?
+  var edge = this.diagram().dom().anyMorphism('A', 'B');
+  var f = this.diagram().mapMorphism(edge);
+  var component = new Map([['A',m.compose(f)],['B',m]]);
+  var cone = new ColimitingCocone(this.diagram(), apex, component);
+
   var q = this.component('B');
-  assertEqualDom(q, m);
-
-  // TODO: Equalizers and Coequalizers has the same diagrams,
-  // so commutativity check is the same too. The following code
-  // must be moved somewhere.
-  // Note, that composition order is different.
-  // Partly the checks must be moved to Cone (NaturalTransformation)
-  var morphisms = [];
-  this.diagram().dom().morphisms().forEach(function (edge) {
-    var morphism = this.diagram().mapMorphism(edge);
-    morphisms.push(m.compose(morphism));
-  }.bind(this));
-  for (var i = 0; i < morphisms.length; i++) {
-    for (var j = i; j < morphisms.length; j++) {
-      assertCommutes(morphisms[i], morphisms[j]);
-    }
-  }
-
   var mapping = {};
   m.dom().forEach(function (x) {
     mapping[q.image(x)] = m.image(x);
-  }.bind(this));
-  var u = new TotalFunction(q.codom(), m.codom(), mapping);
-  assertCommutes(u.compose(q), m);
-  return u;
+  });
+  var u = new TotalFunction(this.apex(), apex, mapping);
+
+  return new CoconeMorphism(this, cone, u);
 };
