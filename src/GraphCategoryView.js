@@ -132,7 +132,7 @@ function GraphCategoryView(model) {
         data.links.push({ name : name, label : name, source : se, target : t,  value : 1, ordinal : calcOrdinal(adjMatrix, ordMatrix, se, t) });
       });
     });
-cl(data);
+
     hullg = vis.append("g").attr("class", "hulls");
     linkg = vis.append("g").attr("class", "links");
     nodeg = vis.append("g").attr("class", "nodes");
@@ -506,25 +506,7 @@ function convexHulls(nodes, index, offset) {
 
   return hullset;
 }
-/*
-function showGraphCategoryView(viewId, category, objects, morphisms) {
-  var diagram = new Diagram(null, category);
-  for (var name in objects) {
-    if (has(objects, name)) {
-      diagram.addObjectMap(name, objects[name]);
-    }
-  }
-  for (var name in morphisms) {
-    if (has(morphisms, name)) {
-      var morphism = morphisms[name];
-      diagram.addMorphismMap(name, morphism.dom, morphism.codom, morphism.morphism);
-    }
-  }
-  var view = new GraphCategoryView(diagram);
-  view.bind(d3.select('#' + viewId));
-  view.start();
-}
-*/
+
 function showGraphCategoryView(viewId, category, objects, morphisms) {
   var mapObject = [];
   for (var name in objects) {
@@ -539,7 +521,7 @@ function showGraphCategoryView(viewId, category, objects, morphisms) {
       mapMorphism.push([name, morphism.dom, morphism.codom, morphism.morphism]);
     }
   }
-  var diagram = new Diagram(category, mapObject, mapMorphism);
+  var diagram = new Diagram(null, category, mapObject, mapMorphism);
   var view = new GraphCategoryView(diagram);
   view.bind(d3.select('#' + viewId));
   view.start();

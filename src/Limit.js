@@ -188,9 +188,9 @@ function Pullback(cat, f, g) {
   var gq = g.compose(q);
   assertCommutes(fp, gq);
 
-  var map = new Map([['A',p],['B',q],['C',fp]]);
+  var component = [['A',p],['B',q],['C',fp]];
 
-  Pullback.base.constructor.call(this, diagram, eq.apex(), map);
+  Pullback.base.constructor.call(this, diagram, eq.apex(), component);
 }
 
 extend(Pullback, LimitingCone);
@@ -200,7 +200,7 @@ Pullback.prototype.univ = function (m, n) {
   // TODO: I guess missing components must be calculated automatically?
   var edge = this.diagram().dom().anyMorphism('A', 'C');
   var f = this.diagram().mapMorphism(edge);
-  var component = new Map([['A',m],['B',n],['C',f.compose(m)]]);
+  var component = [['A',m],['B',n],['C',f.compose(m)]];
   var cone = new LimitingCone(this.diagram(), apex, component);
 
   var u = this.equalizer().univ(this.product().univ(m, n).morphism()).morphism();
@@ -240,9 +240,9 @@ function Pushout(cat, f, g) {
   var qg = q.compose(g);
   assertCommutes(pf, qg);
 
-  var map = new Map([['A',p],['B',q],['C',pf]]);
+  var component = [['A',p],['B',q],['C',pf]];
 
-  Pushout.base.constructor.call(this, diagram, ceq.apex(), map);
+  Pushout.base.constructor.call(this, diagram, ceq.apex(), component);
 }
 
 extend(Pushout, ColimitingCocone);
@@ -291,7 +291,7 @@ Pushout.prototype.univ = function (m, n) {
   // TODO: I guess missing components must be calculated automatically?
   var edge = this.diagram().dom().anyMorphism('C', 'A');
   var f = this.diagram().mapMorphism(edge);
-  var component = new Map([['A',m],['B',n],['C',m.compose(f)]]);
+  var component = [['A',m],['B',n],['C',m.compose(f)]];
   var cone = new ColimitingCocone(this.diagram(), apex, component);
 
   var u = this.coequalizer().univ(this.coproduct().univ(m, n).morphism()).morphism();

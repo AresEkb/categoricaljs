@@ -119,24 +119,18 @@ var intervalCat = new IntervalCategory();
 var setCat = new SetCategory();
 var graphCat = new Quiv(setCat);
 
-var graphA = graphCat.object();
-graphA.mapObject(0, setCat.object([1]));
-graphA.mapObject(1, setCat.object([1,2]));
-graphA.mapMorphism('s', setCat.morphism(graphA.mapObject(0), graphA.mapObject(1), {1: 1}));
-graphA.mapMorphism('t', setCat.morphism(graphA.mapObject(0), graphA.mapObject(1), {1: 2}));
-
+var graphA = new Quiver([1,2], [1], [[1,1]], [[1,2]]);
 console.log(graphA);
 
-var graphB = graphCat.object();
-graphB.mapObject(0, setCat.object([1,2,3,4,5]));
-graphB.mapObject(1, setCat.object([1,2,3,4]));
-graphB.mapMorphism('s', setCat.morphism(graphB.mapObject(0), graphB.mapObject(1), {1: 1, 2: 2, 3: 3, 4: 1, 5: 3}));
-graphB.mapMorphism('t', setCat.morphism(graphB.mapObject(0), graphB.mapObject(1), {1: 2, 2: 4, 3: 4, 4: 3, 5: 1}));
+var graphB = new Quiver([1,2,3,4], [1,2,3,4,5], [[1,1],[2,2],[3,3],[4,1],[5,3]], [[1,2],[2,4],[3,4],[4,3],[5,1]]);
+console.log(graphB);
 
-var fEdgeMap = setCat.morphism(graphA.mapObject(0), graphB.mapObject(0), {1: 1});
-var fNodeMap = setCat.morphism(graphA.mapObject(1), graphB.mapObject(1), {1: 1, 2: 2});
-var f = graphCat.morphism(graphA, graphB);
-f.mapObject(0, fEdgeMap);
-f.mapObject(1, fNodeMap);
+var fNodeMap = setCat.morphism(graphA.mapObject('V'), graphB.mapObject('V'), {1: 1, 2: 2});
+var fEdgeMap = setCat.morphism(graphA.mapObject('E'), graphB.mapObject('E'), {1: 1});
+var f = new NaturalTransformation(graphA, graphB, [['V',fNodeMap],['E',fEdgeMap]]);
+
+//var f = graphCat.morphism(graphA, graphB);
+//f.mapObject(0, fEdgeMap);
+//f.mapObject(1, fNodeMap);
 
 console.log(f);

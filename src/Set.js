@@ -509,7 +509,7 @@ TotalFunction.prototype.toString = function () {
 function SetTerminalObject(cat) {
   var diagram = new Diagram(null, cat);
   var apex = new Set([1]);
-  var component = new Map();
+  var component = [];
   SetTerminalObject.base.constructor.call(this, diagram, apex, component);
 }
 
@@ -517,7 +517,7 @@ extend(SetTerminalObject, LimitingCone);
 
 SetTerminalObject.prototype.univ = function (A) {
   var apex = A;
-  var component = new Map();
+  var component = [];
   var cone = new LimitingCone(this.diagram(), apex, component);
 
   var mapping = {};
@@ -533,7 +533,7 @@ SetTerminalObject.prototype.univ = function (A) {
 function SetInitialObject(cat) {
   var diagram = new Diagram(null, cat);
   var apex = new Set();
-  var component = new Map();
+  var component = [];
   SetInitialObject.base.constructor.call(this, diagram, apex, component);
 }
 
@@ -541,7 +541,7 @@ extend(SetInitialObject, ColimitingCocone);
 
 SetInitialObject.prototype.univ = function (A) {
   var apex = A;
-  var component = new Map();
+  var component = [];
   var cone = new ColimitingCocone(this.diagram(), apex, component);
 
   var u = new TotalFunction(this.apex(), apex, {});
@@ -568,7 +568,7 @@ function SetProduct(cat, A, B) {
   });
   var pA = new TotalFunction(apex, A, mapping1);
   var pB = new TotalFunction(apex, B, mapping2);
-  var component = new Map([['A',pA],['B',pB]]);
+  var component = [['A',pA],['B',pB]];
 
   SetProduct.base.constructor.call(this, diagram, apex, component);
 }
@@ -577,7 +577,7 @@ extend(SetProduct, LimitingCone);
 
 SetProduct.prototype.univ = function (m, n) {
   var apex = m.dom();
-  var component = new Map([['A',m],['B',n]]);
+  var component = [['A',m],['B',n]];
   var cone = new LimitingCone(this.diagram(), apex, component);
 
   var f = this.component('A');
@@ -612,7 +612,7 @@ function SetCoproduct(cat, A, B) {
   }
   var iA = new TotalFunction(A, apex, createInjection(A, apex));
   var iB = new TotalFunction(B, apex, createInjection(B, apex));
-  var component = new Map([['A',iA],['B',iB]]);
+  var component = [['A',iA],['B',iB]];
 
   SetCoproduct.base.constructor.call(this, diagram, apex, component);
 }
@@ -621,7 +621,7 @@ extend(SetCoproduct, ColimitingCocone);
 
 SetCoproduct.prototype.univ = function (m, n) {
   var apex = m.codom();
-  var component = new Map([['A',m],['B',n]]);
+  var component = [['A',m],['B',n]];
   var cone = new ColimitingCocone(this.diagram(), apex, component);
 
   var f = this.component('A');
@@ -654,9 +654,7 @@ function SetCoproductComplement(cat, f) {
 
   var diagram = new Diagram(null, cat, [['A',A],['B',B]]);
 
-  var component = new Map();
-  component.set('A', f);
-  component.set('B', g);
+  var component = [['A',f],['B',g]];
 
   // It's not an error, we call the base constructor of the base here
   SetCoproduct.base.constructor.call(this, diagram, apex, component);
@@ -685,7 +683,7 @@ function SetEqualizer(cat, f, g) {
       q.push(x, x);
     }
   });
-  var component = new Map([['A',q],['B',f.compose(q)]]);
+  var component = [['A',q],['B',f.compose(q)]];
 
   SetEqualizer.base.constructor.call(this, diagram, apex, component);
 }
@@ -697,7 +695,7 @@ SetEqualizer.prototype.univ = function (m) {
   // TODO: I guess missing components must be calculated automatically?
   var edge = this.diagram().dom().anyMorphism('A', 'B');
   var f = this.diagram().mapMorphism(edge);
-  var component = new Map([['A',m],['B',f.compose(m)]]);
+  var component = [['A',m],['B',f.compose(m)]];
   var cone = new LimitingCone(this.diagram(), apex, component);
 
   var q = this.component('A');
@@ -734,7 +732,7 @@ function SetCoequalizer(cat, f, g) {
     apex.add(t);
     q.push(s, t);
   });
-  var component = new Map([['A',q.compose(f)],['B',q]]);
+  var component = [['A',q.compose(f)],['B',q]];
 
   SetCoequalizer.base.constructor.call(this, diagram, apex, component);
 }
@@ -746,7 +744,7 @@ SetCoequalizer.prototype.univ = function (m) {
   // TODO: I guess missing components must be calculated automatically?
   var edge = this.diagram().dom().anyMorphism('A', 'B');
   var f = this.diagram().mapMorphism(edge);
-  var component = new Map([['A',m.compose(f)],['B',m]]);
+  var component = [['A',m.compose(f)],['B',m]];
   var cone = new ColimitingCocone(this.diagram(), apex, component);
 
   var q = this.component('B');

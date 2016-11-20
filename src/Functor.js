@@ -248,6 +248,10 @@ function NaturalTransformation(F, G, component) {
     assertEqualObjects(GA, h.codom(), 'The codomain of the natural transformation component at object ' + A + ' must be G(' + A + ')');
   }
 
+  if (component instanceof Array) {
+    component = new Map(component);
+  }
+
   if (typeof component == 'function') {
     this.component = function (A) {
       assertHasObject(this.dom0(), A);
@@ -287,7 +291,7 @@ function NaturalTransformation(F, G, component) {
     };
   }
   else {
-    throw 'The component argument must be either Function or Map';
+    throw 'The component argument must be Function, Map or Array or the form [[A,hA],[B,hB],...]';
   }
 }
 
