@@ -288,11 +288,20 @@ function TotalFunction(dom, codom, mapping) {
   this.codom = function () { return codom; };
 
   if (!isUndefined(mapping)) {
-    assert(mapping instanceof Object, 'Mapping must be an Object');
-    for (var prop in mapping) {
-      if (has(mapping, prop)) {
-        this.push(tryCastToInt(prop), mapping[prop]);
+    if (mapping instanceof Array) {
+      for (var i=0; i < mapping.length; i++) {
+        this.push(mapping[i][0], mapping[i][1]);
       }
+    }
+    else if (mapping instanceof Object) {
+      for (var prop in mapping) {
+        if (has(mapping, prop)) {
+          this.push(tryCastToInt(prop), mapping[prop]);
+        }
+      }
+    }
+    else {
+      throw 'Mapping must be an Object or Array';
     }
   }
 }
@@ -498,7 +507,7 @@ TotalFunction.prototype.toString = function () {
 // SetTerminalObject
 
 function SetTerminalObject(cat) {
-  var diagram = new Diagram(cat);
+  var diagram = new Diagram(null, cat);
   var apex = new Set([1]);
   var component = new Map();
   SetTerminalObject.base.constructor.call(this, diagram, apex, component);
@@ -522,7 +531,7 @@ SetTerminalObject.prototype.univ = function (A) {
 // SetInitialObject
 
 function SetInitialObject(cat) {
-  var diagram = new Diagram(cat);
+  var diagram = new Diagram(null, cat);
   var apex = new Set();
   var component = new Map();
   SetInitialObject.base.constructor.call(this, diagram, apex, component);
@@ -544,7 +553,7 @@ SetInitialObject.prototype.univ = function (A) {
 // SetProduct
 
 function SetProduct(cat, A, B) {
-  var diagram = new Diagram(cat, [['A',A],['B',B]]);
+  var diagram = new Diagram(null, cat, [['A',A],['B',B]]);
 
   var apex = new Set();
   var mapping1 = {};
@@ -588,7 +597,7 @@ SetProduct.prototype.univ = function (m, n) {
 // SetCoproduct
 
 function SetCoproduct(cat, A, B) {
-  var diagram = new Diagram(cat, [['A',A],['B',B]]);
+  var diagram = new Diagram(null, cat, [['A',A],['B',B]]);
 
   var apex = new Set();
   var elementCount = 1;
@@ -643,7 +652,7 @@ function SetCoproductComplement(cat, f) {
   var B = apex.diff(f.image());
   var g = new TotalFunction(B, apex).initId();
 
-  var diagram = new Diagram(cat, [['A',A],['B',B]]);
+  var diagram = new Diagram(null, cat, [['A',A],['B',B]]);
 
   var component = new Map();
   component.set('A', f);
@@ -663,7 +672,7 @@ extend(SetCoproductComplement, SetCoproduct);
 function SetEqualizer(cat, f, g) {
   var A = f.dom();
   var B = f.codom();
-  var diagram = new Diagram(cat, [['A',A],['B',B]],
+  var diagram = new Diagram(null, cat, [['A',A],['B',B]],
     [['f','A','B',f],
      ['g','A','B',g]]);
 
@@ -707,7 +716,7 @@ SetEqualizer.prototype.univ = function (m) {
 function SetCoequalizer(cat, f, g) {
   var A = f.dom();
   var B = f.codom();
-  var diagram = new Diagram(cat, [['A',A],['B',B]],
+  var diagram = new Diagram(null, cat, [['A',A],['B',B]],
     [['f','A','B',f],
      ['g','A','B',g]]);
 

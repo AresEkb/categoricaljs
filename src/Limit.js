@@ -169,7 +169,7 @@ function Pullback(cat, f, g) {
   var B = g.dom();
   var C = f.codom();
 
-  var diagram = new Diagram(cat, [['A',A],['B',B],['C',C]],
+  var diagram = new Diagram(null, cat, [['A',A],['B',B],['C',C]],
     [['f','A','C',f],
      ['g','B','C',g]]);
 
@@ -221,7 +221,7 @@ function Pushout(cat, f, g) {
   var B = g.codom();
   var C = f.dom();
 
-  var diagram = new Diagram(cat, [['A',A],['B',B],['C',C]],
+  var diagram = new Diagram(null, cat, [['A',A],['B',B],['C',C]],
     [['f','C','A',f],
      ['g','C','B',g]]);
 

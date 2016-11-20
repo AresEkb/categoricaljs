@@ -56,109 +56,56 @@ function Span() {
   this.g = cat.morphism(this.AB, this.B);
 }
 
-// Category
-// 0 ->> 1
+/////////////////////////////////////////////////////////////////////////////
+// FreeQuiver
+
 function FreeQuiver() {
-
+  FreeQuiver.base.constructor.call(this, ['V','E'], [['s','E','V'],['t','E','V']]);
 }
 
-extend(FreeQuiver, Category);
+extend(FreeQuiver, IndexCategory);
 
-FreeQuiver.prototype.object = function (name) {
-  if (name === 0 || name === 1) {
-    return name;
-  }
-  throw 'Free Quiver Category doesn\'t contain object ' + name;
+/////////////////////////////////////////////////////////////////////////////
+// Quiver
+
+function Quiver(vertices, edges, source, target) {
+  var V = new Set(vertices);
+  var E = new Set(edges);
+  var s = new TotalFunction(E, V, source);
+  var t = new TotalFunction(E, V, target);
+  var mapObject = [['V',V],['E',E]];
+  var mapMorphism = [['s','E','V',s],['t','E','V',t]];
+  Quiver.base.constructor.call(this, new FreeQuiver(), new SetCategory(), mapObject, mapMorphism);
 }
 
-FreeQuiver.prototype.hasObject = function (name) {
-console.log(name);
-  return name === 0 || name === 1;
-}
+extend(Quiver, Diagram);
 
-FreeQuiver.prototype.morphism = function (name) {
-  if (name === 's' || name === 't') {
-    return { dom : function () { return 0; }, codom : function () { return 1; } }
-  }
-  throw 'Free Quiver Category doesn\'t contain morphism ' + name;
-}
+//var q = new Quiver([1,2,3], ['a','b'], [['a',1],['b',2]], [['a',2],['b',3]]);
 
-FreeQuiver.prototype.id = function (name) {
-  if (name === '0' || name === '1') {
-    return { dom : function () { return name; }, codom : function () { return name; } }
-  }
-  throw 'Free Quiver Category doesn\'t contain object ' + name;
-}
-
-FreeQuiver.prototype.compose = function (g, f) {
-  throwNotImplemented();
-}
-
-// Functor
-//   maps E to some object of cat
-//   maps V to some object of cat
-//   maps s to some morphism of cat
-//   maps t to some morphism of cat
-function Quiver() {
-  // TODO: Don't create new objects each time. Define categories as global objects instead
-  // Or use function objects
-  // Or use singleton pattern which caches constructions
-  Quiver.base.constructor.call(this, new FreeQuiver(), new SetCategory());
-
-  this._objectMap = {};
-  this._morphismMap = {};
-
-/*
-  this.E = cat.object();
-  this.V = cat.object();
-  this.s = cat.morphism(this.E, this.V);
-  this.t = cat.morphism(this.E, this.V);
-*/
-}
-
-extend(Quiver, Functor);
-
-Quiver.prototype.mapObject = function (A, target) {
-  if (!isUndefined(target)) {
-    assert(this.codom().hasObject(target));
-    this._objectMap[A] = target;
-    return target;
-  }
-  return this._objectMap[A];
-};
-
-Quiver.prototype.mapMorphism = function (f, target) {
-  if (!isUndefined(target)) {
-    assert(this.codom().hasMorphism(target));
-    this._morphismMap[f] = target;
-    return target;
-  }
-  return this._morphismMap[f];
-};
-
+/////////////////////////////////////////////////////////////////////////////
+// FunctorCategory
 
 function FunctorCategory(C, D) {
+  FunctorCategory.base.constructor.call(this);
 
+  this._source = function () { return C; }
+  this._target = function () { return D; }
 }
 
-FunctorCategory.prototype.object = function (x) {
-};
+extend(FunctorCategory, Category);
 
-FunctorCategory.prototype.morphism = function (A, B) {
-};
-
+/////////////////////////////////////////////////////////////////////////////
+// Quiv
 
 // Functor category of Quiver(cat)
-function Quiv(cat) {
+function Quiv() {
   var freeQuiver = new FreeQuiver();
-  Quiv.base.constructor.call(this, freeQuiver, cat);
-
-  this._source = function () { return freeQuiver; }
-  this._target = function () { return cat; }
+  var setCat = new SetCategory();
+  Quiv.base.constructor.call(this, freeQuiver, setCat);
 }
 
 extend(Quiv, FunctorCategory);
-
+/*
 Quiv.prototype.object = function () {
   return new Quiver(this._target);
 };
@@ -166,7 +113,7 @@ Quiv.prototype.object = function () {
 Quiv.prototype.morphism = function (A, B) {
   return new NaturalTransformation(A, B);
 };
-
+*/
 var intervalCat = new IntervalCategory();
 
 var setCat = new SetCategory();

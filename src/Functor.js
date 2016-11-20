@@ -170,8 +170,8 @@ IndexCategory.prototype.anyMorphism = function (A, B) {
 
 // mapObject:   [[src1,tgt1],[src2,tgt2],...]
 // mapMorphism: [[src1,dom1,codom1,tgt1],[src2,dom2,codom2,tgt2],...]
-function Diagram(C, mapObject, mapMorphism) {
-  assert(C instanceof Category, 'The first argument must be a category: ' + C);
+function Diagram(J, C, mapObject, mapMorphism) {
+  assert(C instanceof Category, 'The second argument must be a category: ' + C);
   if (isUndefined(mapObject)) { mapObject = []; }
   if (isUndefined(mapMorphism)) { mapMorphism = []; }
   assert(mapObject instanceof Array);
@@ -183,9 +183,22 @@ function Diagram(C, mapObject, mapMorphism) {
     mapMorphism2.set(map[0], map[3]);
   });
 
-  var nodes = !isUndefined(mapObject2) ? Array.from(mapObject2.keys()) : [];
-  var edges = mapMorphism;
-  var indexCategory = new IndexCategory(nodes, edges);
+  if (J == null) {
+    var nodes = !isUndefined(mapObject2) ? Array.from(mapObject2.keys()) : [];
+    var edges = mapMorphism;
+    J = new IndexCategory(nodes, edges);
+  }
+  else {
+    assert(J instanceof IndexCategory, 'The first argument must be either an index category or null: ' + J);
+    // Check that functor is defined for all objects
+    J.objects().forEach(function (A) {
+      assert(mapObject2.has(A), 'Functor is not defined for object ' + A);
+    });
+    // Check that functor is defined for all morphisms
+    J.morphisms().forEach(function (f) {
+      assert(mapMorphism2.has(f), 'Functor is not defined for morphism ' + f);
+    });
+  }
 
   // Check that each target object of the functor belongs to the target category
   mapObject2.forEach(function (dst, src) {
@@ -196,14 +209,14 @@ function Diagram(C, mapObject, mapMorphism) {
     assertHasMorphism(C, dst);
   });
   // Check that functor preserves domains and codomains of morphisms
-  indexCategory.morphisms().forEach(function (f) {
-    var FA = mapObject2.get(indexCategory.dom(f));
-    var FB = mapObject2.get(indexCategory.codom(f));
+  J.morphisms().forEach(function (f) {
+    var FA = mapObject2.get(J.dom(f));
+    var FB = mapObject2.get(J.codom(f));
     assertEqualObjects(mapMorphism2.get(f).dom(), FA, 'Functor doesn\'t preserve a domain of the morphism ' + f);
     assertEqualObjects(mapMorphism2.get(f).codom(), FB, 'Functor doesn\'t preserve a codomain of the morphism ' + f);
   });
 
-  Diagram.base.constructor.call(this, indexCategory, C, mapObject2.get.bind(mapObject2), mapMorphism2.get.bind(mapMorphism2));
+  Diagram.base.constructor.call(this, J, C, mapObject2.get.bind(mapObject2), mapMorphism2.get.bind(mapMorphism2));
 
   // TODO: Immutable diagram may be better:
   // https://www.sitepoint.com/immutability-javascript/

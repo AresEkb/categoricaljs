@@ -477,7 +477,7 @@ function showSetCategoryView(viewId, category, objects, morphisms) {
       mapMorphism.push([name, morphism.dom, morphism.codom, morphism.morphism]);
     }
   }
-  var diagram = new Diagram(category, mapObject, mapMorphism);
+  var diagram = new Diagram(null, category, mapObject, mapMorphism);
   var view = new SetCategoryView(diagram);
   view.bind(d3.select('#' + viewId));
   view.start();
